@@ -1,0 +1,334 @@
+provider:
+  source:
+    # This identifies the python module containing the GCP provider
+    # layer for vTDS, its version and the URL of the pip index. Any
+    # necessary authentication is assumed to be handled by a '.netrc'
+    # or may be injected using ARTIFACTORY_USER and
+    # ARTIFACTORY_PASSWORD environments.
+    #
+    # This is included in the base configuration not to be used from
+    # there, but as an example of what it would look like in your
+    # first system configuration overlay to import this provider layer
+    # implementation into your vTDS system. You must put something
+    # like this in the first system configuration overlay your
+    # deployment uses. Without it there will be no provider layer in
+    # your vTDS build. The layer sources are the only special pieces
+    # of the configuration because they are needed to get the process
+    # going.
+    index_url: "https://artifactory.algol60.net/artifactory/csm-python-modules/simple"
+    package: vtds-provider-gcp
+    version: "latest"  # Any version or "latest" to take the latest version
+  organization:
+    # What you want to call your organization, not necessarily tied to
+    # GCP data anywhere. Lowercase and numeric with dashes.
+    name: ""                     # Required in system config overlay
+
+    # Your GCP billing account number
+    billing_account: ""          # Required in system config overlay
+
+    # Your GCP organization ID
+    org_id: ""                   # Required in system config overlay
+
+    # Your GCP parent organization ID (can be the same as the org_id)
+    parent: ""                   # Required in system config overlay
+
+    # Your GCP seed project. This is a project with storage resources
+    # associated with it that lives within your GCP organization and
+    # is accessible to users creating vTDS systems. Among other things
+    # it is used for preserving remotely cached Terragrunt / Terraform
+    # state for the GCP provider layer for all vTDS systems.
+    seed_project: ""             # Required in system config overlay
+
+    # A list of strings identifying the list of Google users or groups
+    # who own projects within the organization for managment purposes.
+    #
+    # For example:
+    #   security_owners:
+    #   - "group:my-project-admins@my-organization.net"
+    #   - "user:my-favorite-person@my-organization.net"
+    #
+    # Generally it is best to use groups here instead of users so that
+    # membership can be managed in one place.
+    security_owners: []          # Required in system config overlay
+
+    # An optional list of trusted IP address ranges in CIDR format
+    # that should be added to project firewalls at an organization level.
+    trusted_cidrs: []
+
+  project:
+    # Check the README.md in this directory to get information on
+    # these settings and where to find a comprehensive set of
+    # descriptions of each one.
+    activate_service_identities: []
+
+    activate_apis:
+      - "admin.googleapis.com"
+      - "cloudbilling.googleapis.com"
+      - "cloudresourcemanager.googleapis.com"
+      - "iam.googleapis.com"
+      - "serviceusage.googleapis.com"
+
+    auto_create_network: false
+
+    bucket_force_destroy: true
+
+    bucket_labels: {}
+
+    bucket_location: null
+
+    # ERIC COME BACK AND LOOK AT THE BUCKET PROJECT AND BUCKET NAME
+    # FOR A WAY TO ISOLATE EXTERNALLY STORED TF STATE
+    bucket_name: null
+
+    bucket_pap: inherited
+
+    # ERIC COME BACK AND LOOK AT THE BUCKET PROJECT AND BUCKET NAME
+    # FOR A WAY TO ISOLATE EXTERNALLY STORED TF STATE
+    bucket_project: null
+
+    bucket_ula: true
+
+    # Bucket versioning is set to false because projects and their
+    # buckets tend to stick around and the files that are put into
+    # them tend to only need to be kept at the most recent
+    # version. Both storage costs and the risk of running out of
+    # quotas are kept under control by turning off versioning.
+    bucket_versioning: false
+
+    consumer_quotas: null
+
+    create_project_sa: true
+
+    default_network_tier: null
+
+    region: us-central1-a
+    zone: us-central1
+
+  blade_interconnects:
+    # Blade interconnects provide the provider layer networking used
+    # to connect Virtual Blades to each other. At other layers, this
+    # interconnect can be used as the backbone to carry virtual
+    # networking as needed. Any virtual networking is the
+    # responsibility of a higher layer.
+    #
+    # Virtual Blades in any given class only connects to a single
+    # Blade Interconnect, but multiple clusters of Virtual Blades from
+    # different classes can be defined using different Blade
+    # Interconnects as their backbones. In this case, routing and
+    # firewall rules can be used to control communication between the
+    # different clusters.
+    #
+    # The elements here represent classes of Blade Interconnects,
+    # which can stand alone, or be based on or used as parent classes
+    # in an inheritance hierarchy. The class names used for
+    # inheritance are the keys in this dictionary. By specifying a
+    # 'parent_class' in a Blade Interconnect class, your new class can
+    # inherit all of the settings of that parent class. The depth of
+    # the inheritance tree is unlimited. A Blade Interconnect class
+    # with no parent class may either stand alone or be used as the
+    # root of an inheritance tree. The 'base-interconnect' defined
+    # here provides good default settings for all configurable
+    # items. The 'base-interconnect' class can be used as-is,
+    # re-configured in a configuration overlay, or overridden through
+    # inheritance to provide more than one class of Blade
+    # Interconnects.
+    #
+    # All classes of Blade Interconnects specified here will be
+    # consider for inclusion in the generation of Terragrunt /
+    # Terraform controls and the associatedcreation of GCP objects
+    # witin your project. To suppress generation of Terraform /
+    # Terragrunt for a base class that is being used purely as a base
+    # class, set the 'pure_base_class' parameter to true. This will
+    # allow other classes to be derived from the base without making
+    # the base class a candidate for creation in your project. The
+    # 'base-interconnect' class provided here is, by default, a pure
+    # base class. To use it as a class within your project, you can
+    # set 'pure_base_class' to false in an overlay and it will be
+    # included.
+    base-interconnect:
+      # The base internal network (private VPC) class default settings
+      parent_class: null
+      pure_base_class: true
+      network_name: "base-interconnect"
+      description: |
+        Default blade interconnect based on the 'base-interconnect' interconnect
+        class definition.
+      role: null
+      routing_mode: "GLOBAL"
+      mtu: 0
+      enable_ipv6_ula: false
+      internal_ipv6_range: ""
+      network_firewall_policy_enforcment_order: null
+      ipv4_cidr: 10.128.0.0/24 # Override this if it conflicts with something in your application
+      private_access: "true"
+      private_ipv6_access: null
+      flow_logs: "false"
+      flow_logs_interval: "INTERVAL_5_SEC"
+      flow_logs_sampling: "0.5"
+      flow_logs_metadata: "INCLUDE_ALL_METADATA"
+      flow_logs_filter: "true"
+      flow_logs_metadata_fields: []
+      stack_type: null
+      ipv6_access_type: null
+      firewall:
+        ingress_rules:
+          description: "Base Network Firewall Default Ingress"
+          default: {}
+          type:
+            base_network_ingress:
+              name: "base-network-default-ingress"
+              description: "allow SSH ingress from GCP's Identity Aware Proxy (IAP)"
+              disabled: false
+              priority: 100
+              destination_rages: []
+              source_ranges:
+                - "35.235.240.0/20"
+              source_tags: []
+              source_service_accounts: []
+              target_tags: []
+              target_service_accounts: []
+              allow:
+                - protocol: tcp
+                  ports:
+                    - "22"
+              deny: []
+              log_config: null
+        egress_rules:
+          description: "Base Network Firewall Default Egress"
+          default: {}
+          type:
+            base_network_egress:
+              name: "base-network-default-egress"
+              description: "allow egress from anywhere to anywhere"
+              disabled: false
+              priority: 100
+              destination_rages: []
+                - "0.0.0.0/0"
+              source_ranges:
+                - "0.0.0.0/0"
+              source_tags: []
+              source_service_accounts: []
+              target_tags: []
+              target_service_accounts: []
+              allow: []
+              deny: []
+              log_config: null
+      routes:
+        # Routes are very platform and application specific, so the
+        # settings here are just here to give a template, not to be used
+        # for anything.
+        - name: "base-route"
+          description: "Placeholder for a route, override this"
+          tags: "base-route-tag"
+          destination_range: "0.0.0.0/0" # Override this with an application setting
+          next_hop_internet: false
+          next_hop_ip: "1.2.3.4"
+          next_hop_instance: "my-instance"
+          next_hop_instance_zone: null
+          next_hop_vpn_tunnel: ""
+          next_hope_ilb: ""
+          priority: "1000"
+  virtual_blades:
+    # Virtual Blades are implemented here as GCP instances, typically
+    # with nested virtualization enabled so that the actual node(s)
+    # can be constructed on the blade. The settings available in a
+    # Virtual Blade class provide a nearly comprehensive list of the
+    # settings that can be used on GCP instances.
+    #
+    # The elements here represent classes of Virtual Blades,
+    # which can stand alone, or be based on or used as parent classes
+    # in an inheritance hierarchy. The class names used for
+    # inheritance are the keys in this dictionary. By specifying a
+    # 'parent_class' in a Virtual Blade class, your new class can
+    # inherit all of the settings of that parent class. The depth of
+    # the inheritance tree is unlimited. A Virtual Blade class
+    # with no parent class may either stand alone or be used as the
+    # root of an inheritance tree. The 'base-blade' defined
+    # here provides good default settings for all configurable
+    # items. The 'base-interconnect' class can be used as-is,
+    # re-configured in a configuration overlay, or overridden through
+    # inheritance to provide more than one class of Virtual Blade.
+    #
+    # All classes of Virtual Blades specified here will be
+    # consider for inclusion in the generation of Terragrunt /
+    # Terraform controls and the associatedcreation of GCP objects
+    # witin your project. To suppress generation of Terraform /
+    # Terragrunt for a base class that is being used purely as a base
+    # class, set the 'pure_base_class' parameter to true. This will
+    # allow other classes to be derived from the base without making
+    # the base class a candidate for creation in your project. The
+    # 'base-interconnect' class provided here is, by default, a pure
+    # base class. To use it as a class within your project, you can
+    # set 'pure_base_class' to false in an overlay and it will be
+    # included.
+    base-blade:
+      parent_class: null
+      pure_base_class: true
+      vm:
+        machine_type: n1-standard-4
+        min_cpu_platform: null
+        enable_nested_virtualization: true
+        threads_per_core: null
+        boot_disk:
+          source_image: ""
+          source_image_family: "ubuntu-2310-amd643"
+          source_image_project: "ubuntu-os-cloud"
+          disk_size_gb: 10
+          disk_type: "pd-standard"
+          disk_labels: {}
+          disk_encryption_key: null
+          auto_delete: true
+        additional_disks:
+          - disk_name: null
+            device_name: "sdb"
+            auto_delete: true
+            boot: false
+            disk_size_gb: 1024
+            disk_type: "pd-standard"
+            disk_labels: {}
+            source_snapshot: null
+      blade_interconnect:
+        network: ""
+        subnetwork: "base-interconnect"
+        nic_type: null
+        stack_type: null
+        additional_networks: []
+        total_egress_bandwidth_tier: "DEFAULT"
+        # Fill 'ip_addrs' in with IP address strings to be assigned to
+        # the blades of this class in the blade interconnect
+        # network. Each IP address will be assigned sequentially one
+        # per GCP instance (blade).
+        ip_addrs: []
+        alias_ip_range: null
+      metadata:
+        metadata:
+          "serial-port-enable": "true"
+        startup_script: ""
+      count: 0
+      name_prefix: "base"
+      access_config:
+        - nat_ip: ""
+          network_tier: "PREMIUM"
+      add_hostname_suffix: true
+      hostname_suffix_separator: "-"
+      hostname: "base"
+      can_ip_forward: true
+      tags: []
+      labels: {}
+      availability:
+        preemptible: false
+        spot: false
+        automatic_restart: false
+        on_host_maintenance: "MIGRATE"
+        spot_instance_termination_action: "STOP"
+      security:
+        enable_shielded_vm: false
+        shielded_instance_config:
+          # Only used of 'enable_shielded_vm' is set to 'true' above.
+          enable_secure_boot: true
+          enable_vtpm: true
+          enable_integrity_monitoring: true
+        enable_confidential_vm: false
+      ipv6_access_config: []
+      gpu: null
+      resource_policies: []

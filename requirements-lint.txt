@@ -1,0 +1,4 @@
+--extra-index-url="https://artifactory.algol60.net/artifactory/csm-python-modules/simple"
+pylint
+pyyaml
+vtds-base

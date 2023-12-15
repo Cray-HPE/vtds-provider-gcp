@@ -1,0 +1,31 @@
+provider:
+  blade_interconnects:
+    test_interconnect:
+      # A blade interconnect for testing interconnect inheritance
+      parent_class: base_interconnect
+      pure_base_class: false
+      network_name: "test-interconnect"
+      description: |
+        A blade interconnect based on 'base interconnect' to facilitate testing
+        of blade interconnect inheritance.
+      firewall:
+        ingress_rules:
+          description: "Test Network Firewall Default Ingress"
+            base_network_ingress:
+              name: "test-network-default-ingress"
+        egress_rules:
+          description: "Test Network Firewall Default Egress"
+          type:
+            base_network_egress:
+              name: "test-network-default-egress"
+  virtual_blades:
+    # Test basic inheritance
+    test_blade_type_1:
+      parent_class: base_blade
+      pure_base_class: false
+      blade_interconnect:
+        subnetwork: "test-interconnect"
+    # Test inheritance with two levels of ancestry
+    test_blade_type_2:
+      parent_class: test_blade_type_1
+      pure_base_class: false
