@@ -36,7 +36,7 @@ export PATH="${PATH}:${HOME}/.local/bin"
 
 set -e
 
-# python3 -m pip install --upgrade pip
+python3 -m pip install --upgrade pip
 python3 -m pip install --extra-index-url=https://${ALGOL60_HOST}/artifactory/csm-python-modules/simple '.[ci]'
 
 # Lint the public API code
