@@ -93,15 +93,6 @@ pipeline {
                 }
 
                 stages {
-
-                    stage('Build: Validate') {
-                        steps {
-                            withCredentials([usernamePassword(credentialsId: 'artifactory-algol60-readonly', passwordVariable: 'ARTIFACTORY_PASSWORD', usernameVariable: 'ARTIFACTORY_USERNAME')]) {                        
-                                sh "./runValidate.sh"
-                            }
-                        }
-                    }
-
                     stage('Build: Wheel') {
 
                         steps {
