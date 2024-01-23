@@ -11,6 +11,7 @@ provider:
       firewall:
         ingress_rules:
           description: "Test Network Firewall Default Ingress"
+          type:
             base_network_ingress:
               name: "test-network-default-ingress"
         egress_rules:

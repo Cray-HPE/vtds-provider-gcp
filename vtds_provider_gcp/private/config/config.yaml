@@ -202,7 +202,7 @@ provider:
               description: "allow egress from anywhere to anywhere"
               disabled: false
               priority: 100
-              destination_rages: []
+              destination_rages:
                 - "0.0.0.0/0"
               source_ranges:
                 - "0.0.0.0/0"
