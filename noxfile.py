@@ -78,7 +78,7 @@ def tests(session):
         session.install(EXTRA_INDEX, '.[test]')
 
     # XXX - disable tests until we have some...
-    session.run('true')
+    session.run('/usr/bin/true', external=True)
 #    # Run py.test against the tests.
 #    session.run(
 #        'py.test',
@@ -106,7 +106,7 @@ def cover(session):
     if session.python:
         session.install(EXTRA_INDEX, '.[cover]')
     # Disable coverage tests until we have some...
-    session.run('true')
+    session.run('/usr/bin/true', external=True)
 #    session.run('coverage', 'report', '--show-missing',
 #                '--fail-under={}'.format(COVERAGE_FAIL))
 #    session.run('coverage', 'erase')

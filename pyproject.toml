@@ -37,9 +37,9 @@ classifiers = [
 ]
 description = 'GCP Provider Layer Plugin for the Virtual Test Development System (vTDS) suite'
 dependencies = [
-    'pyyaml',
-    'shutils',
-    'vtds_base',
+    'pyyaml~=6.0',
+    'shutils~=0.1',
+    'vtds_base~=0.0',
 ]
 
 dynamic = ['version']

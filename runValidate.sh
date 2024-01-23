@@ -32,37 +32,21 @@ machine ${ALGOL60_HOST}
     password ${ARTIFACTORY_PASSWORD}
 EOF
 
-
 export PATH="${PATH}:${HOME}/.local/bin"
-pip3 install --upgrade pip
-pip3 install --upgrade --no-use-pep517 nox
-pip3 install --upgrade wheel
-
-hash -r   # invalidate hash tables since we may have moved things around
-pip3 install --ignore-installed setuptools_scm[toml]
-pip3 install --ignore-installed virtualenv
-pip3 install --ignore-installed -r requirements-style.txt
-pip3 install --ignore-installed -r requirements-lint.txt
-# pip3 install --ignore-installed -r requirements-test.txt
-pip3 install --ignore-installed build
-hash -r   # invalidate hash tables since we may have moved things around
-
-find . | grep -E "(__pycache__|\.pyc|\.pyo$)" | xargs rm -rf
 
 set -e
 
-cat requirements-lint.txt
+# python3 -m pip install --upgrade pip
+python3 -m pip install --extra-index-url=https://${ALGOL60_HOST}/artifactory/csm-python-modules/simple '.[ci]'
 
 # Lint the public API code
-nox -s lint_public
-
-# Lint the private layer implementation code
-nox -s lint_private
+nox -s lint
 
 # Style check all the code
 nox -s style
 
 # Run unit tests
-#
-# Temporarily Disabled until there are unit tests to run
-# nox -s tests
+nox -s tests
+
+# Run coverage check
+nox -s cover
