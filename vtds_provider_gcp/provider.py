@@ -30,28 +30,70 @@ from vtds_base import ContextualError
 from .private.private_provider import PrivateProvider
 
 
-class Provider:
+class LayerAPI:
     """ Provider class presents the Provider API to callers.
 
     """
-    def __init__(self, config, build_dir):
+    def __init__(self, stack, config, build_dir):
         """Constructor. Constructs the public API to be used for
         building and interacting with a provider layer based on the
-        'config' data structure provided and an absolute path to the
-        'build_dir' which is a scratch area provided by the caller for
-        any provider layer build activities to take place.
+        full stack of vTDS layers loaded, the 'config' data structure
+        provided and an absolute path to the 'build_dir' which is a
+        scratch area provided by the caller for any provider layer
+        build activities to take place.
 
         """
+        self.stack = stack
         provider_config = config.get('provider', None)
         if provider_config is None:
             raise ContextualError(
                 "no provider configuration found in top level configuration"
             )
-        self.private = PrivateProvider(provider_config, build_dir)
+        self.private = PrivateProvider(stack, provider_config, build_dir)
+        self.prepared = False
+        self.deployed = False
 
-    def initialize(self):
-        """Initialize any private data needed by the implementation
-        of the provider layer plugin.
+    def prepare(self):
+        """Prepare the provider for deployment.
 
         """
-        return self.private.initialize()
+        self.private.prepare()
+        self.prepared = True
+
+    def deploy(self):
+        """Deploy the provider (must call prepare() prior to this
+        call.
+
+        """
+        self.private.deploy()
+
+    def shutdown(self, virtual_blade_names=None):
+        """Shutdown operation. This will shut down (power off) the
+        specified virtual blades, or, if none are specified, all
+        virtual blades, in the provider, leaving them provisioned.
+
+        """
+        self.private.shutdown(virtual_blade_names)
+
+    def startup(self, virtual_blade_names=None):
+        """Startup operation. This will start up (power on) the
+        specified virtual blades, or, if none are specified, all
+        virtual blades, in the provider as long as they are
+        provisioned.
+
+        """
+        self.private.startup(virtual_blade_names)
+
+    def dismantle(self):
+        """Dismantle operation. This will de-provision all virtual
+        blades in the provider.
+
+        """
+        self.private.dismantle()
+
+    def remove(self):
+        """Remove operation. This will remove all resources
+        provisioned for the provider layer.
+
+        """
+        self.private.remove()

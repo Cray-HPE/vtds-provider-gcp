@@ -43,7 +43,7 @@ class PrivateProvider:
     accessed through the python Provider API.
 
     """
-    def __init__(self, config, build_dir):
+    def __init__(self, stack, config, build_dir):
         """Constructor, stash the root of the provider tree and the
         digested and finalized provider configuration provided by the
         caller that will drive all activities at all layers.
@@ -52,9 +52,11 @@ class PrivateProvider:
         self.config = config
         self.terragrunt = Terragrunt(build_dir)
         self.terragrunt_config = TerragruntConfig(self.terragrunt)
+        self.stack = stack
+        self.prepared = False
 
-    def initialize(self):
-        """Initialize operation. This drives creation of the provider
+    def prepare(self):
+        """Prepare operation. This drives creation of the provider
         layer Terragrunt configuration and Terragrunt / Terraform
         control tree used to deploy the GCP resources that will form
         the foundation of a platform for the vTDS.
@@ -96,3 +98,56 @@ class PrivateProvider:
         # set up the terragrunt controls for everything that is going
         # to get them, set up the terragrunt configuration.
         self.terragrunt_config.initialize(self.config)
+
+        # All done with the preparations: make a note that we have
+        # done them and return.
+        self.prepared = True
+
+    def deploy(self):
+        """Deploy operation. This drives the application of the
+        terraform / terragrunt to create the provider layer
+        resources. It can only be called after the prepare operation
+        (prepare()) completes.
+
+        """
+        if not self.prepared:
+            raise ContextualError(
+                "cannot deploy an unprepared provider, call prepare() first"
+            )
+        # pylint: disable=fixme
+        # XXX - Implementation needed here!!!!
+
+    def shutdown(self, virtual_blade_names):
+        """Shutdown operation. This will shut down (power off) the
+        specified virtual blades, or, if none are specified, all
+        virtual blades, in the provider, leaving them provisioned.
+
+        """
+        # pylint: disable=fixme
+        # XXX - implementation needed here!!!!
+
+    def startup(self, virtual_blade_names):
+        """Startup operation. This will start up (power on) the
+        specified virtual blades, or, if none are specified, all
+        virtual blades, in the provider as long as they are
+        provisioned.
+
+        """
+        # pylint: disable=fixme
+        # XXX - implementation needed here!!!!
+
+    def dismantle(self):
+        """Dismantle operation. This will de-provision all virtual
+        blades in the provider.
+
+        """
+        # pylint: disable=fixme
+        # XXX - implementation needed here!!!!
+
+    def remove(self):
+        """Remove operation. This will remove all resources
+        provisioned for the provider layer.
+
+        """
+        # pylint: disable=fixme
+        # XXX - implementation needed here!!!!

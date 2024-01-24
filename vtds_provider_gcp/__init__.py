@@ -24,4 +24,4 @@
 
 """
 from .base_config import BaseConfig
-from .provider import Provider
+from .provider import LayerAPI
