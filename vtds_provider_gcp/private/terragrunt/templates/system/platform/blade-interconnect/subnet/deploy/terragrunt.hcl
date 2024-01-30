@@ -41,12 +41,7 @@ dependency "service_project" {
 }
 
 dependency "vpc" {
-  config_path = find_in_parent_folders("system/blade-interconnect/{{ network_name }}/vpc/deploy")
-
-  mock_outputs = {
-    network_name                            = "{{ network_name }}"
-    mock_outputs_allowed_terraform_commands = ["validate", "plan"]
-  }
+  config_path = find_in_parent_folders("vpc/deploy")
 }
 
 terraform {
@@ -55,12 +50,12 @@ terraform {
 
 inputs = {
   project_id       = dependency.service_project.outputs.project_id
-  network_name     = dependency.vpc.outputs.network_name
+  network_name     = "{{ network_name }}"
   subnets = [
     {
-      subnet_name                      = format("{{ network_name }}-%s", local.vshasta_vars.project.region)
+      subnet_name                      = format("{{ network_name }}-%s", local.vtds_vars.provider.project.region)
       subnet_ip                        = local.vtds_vars.{{ config_path }}.ipv4_cidr
-      subnet_region                    = local.vtds_vars.project.region
+      subnet_region                    = local.vtds_vars.provider.project.region
       subnet_private_access            = local.vtds_vars.{{ config_path }}.private_access
       subnet_private_ipv6_access       = local.vtds_vars.{{ config_path }}.private_ipv6_access
       subnet_flow_logs                 = local.vtds_vars.{{ config_path }}.flow_logs
@@ -76,5 +71,5 @@ inputs = {
       ipv6_access_type                 = local.vtds_vars.{{ config_path }}.ipv6_access_type
     }
   ]
-  secondary_ranges = []
+  secondary_ranges = {}
 }

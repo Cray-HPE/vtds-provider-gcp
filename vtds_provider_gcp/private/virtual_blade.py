@@ -67,6 +67,7 @@ class VirtualBlade:
         # Compose the data to be used in rendering the templated files.
         try:
             interconnect = blade_config['blade_interconnect']
+            boot_disk = blade_config.get('vm', {})['boot_disk']
         except KeyError as err:
             raise ContextualError(
                 "missing config in the Virtual Blade class '%s': %s" % (
@@ -75,19 +76,21 @@ class VirtualBlade:
             ) from err
         try:
             render_data = {
-                'interconnect_name': interconnect['subnet'],
+                'blade_class': key,
+                'interconnect_name': interconnect['subnetwork'],
                 'config_path': "provider.virtual_blades.%s" % key,
+                'source_image_private': boot_disk['source_image_private']
             }
         except KeyError as err:
             raise ContextualError(
-                "missing blade_interconnect config in the Virtual Blade "
-                "class '%s': %s" % (
+                "missing blade_interconnect or boot_disk config in the Virtual "
+                "Blade class '%s': %s" % (
                     key, str(err)
                 )
             ) from err
 
         # Render the templated files in the build tree.
-        render_templated_tree(["*.hcl"], render_data, build_dir)
+        render_templated_tree(["*.hcl", "*.yaml"], render_data, build_dir)
 
     def deploy(self):
         """Placeholder for a deploy operation...

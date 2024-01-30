@@ -40,22 +40,18 @@ dependency "service_project" {
   }
 }
 
-dependency "parent_network" {
-  config_path = find_in_parent_folders("system/blade-interconnect/{{ network_name }}/deploy")
-
-  mock_outputs = {
-    network_name                            = "{{ network_name }}"
-    mock_outputs_allowed_terraform_commands = ["validate", "plan"]
-  }
+dependency "vpc" {
+  config_path = find_in_parent_folders("vpc/deploy")
 }
 
 terraform {
   source = format("%s?ref=%s", local.inputs_vars.source_module.url, local.inputs_vars.source_module.tag)
 }
+
 inputs = {
   project_id    = dependency.service_project.outputs.project_id
-  network_name  = dependency.parent_network.network_name
+  network_name  = "{{ network_name }}"
   rules         = [] # Deprecated, so no way to set this, use ingress/egress rules
-  ingress_rules = vtds_vars.{{ config_path }}.firewall.ingress_rules
-  egress_rules = vtds_vars.{{ config_path }}.firewall.egress_rules
+  ingress_rules = local.vtds_vars.{{ config_path }}.firewall.ingress_rules
+  egress_rules  = local.vtds_vars.{{ config_path }}.firewall.egress_rules
 }

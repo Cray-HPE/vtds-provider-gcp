@@ -79,4 +79,4 @@ class BladeInterconnect:
             ) from err
 
         # Render the templated files in the build tree.
-        render_templated_tree(["*.hcl"], render_data, build_dir)
+        render_templated_tree(["*.hcl", "*.yaml"], render_data, build_dir)

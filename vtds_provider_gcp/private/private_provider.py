@@ -73,7 +73,7 @@ class PrivateProvider:
             # the expanded result back into the configuration. That
             # way, when we write out the configuration we have the
             # full expansion there.
-            blade_config = expand_inheritance(key, blade_types)
+            blade_config = expand_inheritance(blade_types, key)
             blade_types[key] = blade_config
             if blade_config.get('pure_base_class', False):
                 # Skip installation of pure base classes...
@@ -87,7 +87,7 @@ class PrivateProvider:
                 "configuration"
             )
         for key in interconnect_types:
-            interconnect_config = expand_inheritance(key, interconnect_types)
+            interconnect_config = expand_inheritance(interconnect_types, key)
             interconnect_types[key] = interconnect_config
             if interconnect_config.get('pure_base_class', False):
                 # Skip installation of pure base classes...

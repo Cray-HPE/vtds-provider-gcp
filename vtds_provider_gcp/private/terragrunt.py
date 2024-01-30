@@ -143,7 +143,14 @@ class TerragruntConfig:
         config_path = self.terragrunt_env.build_path("terragrunt/vtds.yaml")
         try:
             with open(config_path, 'w', encoding="UTF-8") as config_file:
-                yaml.dump(provider_config, config_file)
+                # Make sure that we get a simple YAML file without
+                # anchors and references.
+                yaml.Dumper.ignore_aliases = lambda *args: True
+                yaml.dump(
+                    provider_config,
+                    config_file,
+                    default_flow_style=False
+                )
         except OSError as err:
             raise ContextualError(
                 "cannot install config file '%s': %s" % (config_path, str(err))

@@ -20,7 +20,6 @@
 # OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
-#
 
 # Include all settings from the root terragrunt.hcl file
 include {
@@ -28,19 +27,16 @@ include {
 }
 
 locals {
-  vtds_vars      = yamldecode(file(find_in_parent_folders("vtds.yaml")))
   inputs_vars    = yamldecode(file("inputs.yaml"))
-  activate_apis  = distinct(
-      concat(
-          local.vtds_vars.provider.project.activate_apis_default,
-          local.inputs_vars.activate_extra_apis
-      )
-  )
-  name              = format(
-      "%s-%s",
-      local.vtds_vars.provider.organization.name,
-      local.vtds_vars.provider.project.base_name,
-  )
+}
+
+dependency "service_project" {
+  config_path = find_in_parent_folders("system/project/deploy")
+
+  mock_outputs = {
+    project_id                              = "gcp-terragrunt-mock-project"
+    mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+  }
 }
 
 terraform {
@@ -48,14 +44,10 @@ terraform {
 }
 
 inputs = {
-  activate_apis               = local.activate_apis
-  disable_dependent_services  = local.inputs_vars.disable_dependent_services
-  disable_services_on_destroy = local.inputs_vars.disable_services_on_destroy
-  group_name                  = local.vtds_vars.provider.project.group_name
-  group_role                  = local.vtds_vars.provider.project.group_role
-  folder_id                   = local.vtds_vars.provider.project.folder_id
-  labels                      = merge(local.vtds_vars.provider.project.labels, local.inputs_vars.labels)
-  name                        = local.name
-  project_id                  = local.name
-  random_project_id           = local.vtds_vars.provider.project.random_project_id
+  description     = local.inputs_vars.description
+  display_name    = local.inputs_vars.display_name
+  grant_xpn_roles = local.inputs_vars.grant_xpn_roles
+  names           = [local.inputs_vars.name]
+  prefix          = local.inputs_vars.prefix
+  project_id      = dependency.service_project.outputs.project_id
 }

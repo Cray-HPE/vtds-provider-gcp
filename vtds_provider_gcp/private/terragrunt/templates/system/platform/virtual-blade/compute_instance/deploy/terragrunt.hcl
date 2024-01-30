@@ -29,6 +29,8 @@ include {
 locals {
   vtds_vars      = yamldecode(file(find_in_parent_folders("vtds.yaml")))
   inputs_vars    = yamldecode(file("inputs.yaml"))
+  ips            = local.vtds_vars.{{ config_path }}.blade_interconnect.ip_addrs
+  static_ips     = slice(local.ips, 0, local.vtds_vars.{{ config_path }}.count)
 }
 
 dependency "service_project" {
@@ -42,11 +44,7 @@ dependency "service_project" {
 }
 
 dependency "{{ interconnect_name }}" {
-  config_path = find_in_parent_folders("blade_interconnect/{{ interconnect_name }}/subnet/deploy")
-  mock_outputs = {
-    subnetwork                              = {}
-    mock_outputs_allowed_terraform_commands = ["validate", "plan"]
-  }
+  config_path = find_in_parent_folders("blade-interconnect/{{ interconnect_name }}/subnet/deploy")
 }
 
 dependency "instance_template" {
@@ -65,11 +63,15 @@ terraform {
 inputs = {
   project_id           = dependency.service_project.outputs.project_id
   instance_template    = dependency.instance_template.outputs.self_link
-  region               = local.vshasta_vars.project.region
-  zone                 = local.vshasta_vars.project.zone
+  region               = local.vtds_vars.provider.project.region
+  zone                 = local.vtds_vars.provider.project.zone
   num_instances        = local.vtds_vars.{{ config_path }}.count
-  static_ips           = local.vtds_vars.{{ config_path }}.ip_addrs
-  network              = null
-  subnetwork           = dependency.{{ interconnect_name }}.outputs.subnetwork
+  static_ips           = local.static_ips
+  network              = ""
+  subnetwork           = format("{{ interconnect_name }}-%s", local.vtds_vars.provider.project.region)
   subnetwork_project   = dependency.service_project.outputs.project_id
+  access_config        = local.vtds_vars.{{ config_path }}.access_config
+  add_hostname_suffix  = local.vtds_vars.{{ config_path }}.add_hostname_suffix
+  hostname_suffix_separator = local.vtds_vars.{{ config_path }}.hostname_suffix_separator
+  hostname             = local.vtds_vars.{{ config_path }}.hostname
 }

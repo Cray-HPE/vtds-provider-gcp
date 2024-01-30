@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright [2023] Hewlett Packard Enterprise Development LP
+# (C) Copyright [2021-2022] Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -20,36 +20,12 @@
 # OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
-
-# Include all settings from the root terragrunt.hcl file
-include {
-  path = find_in_parent_folders()
-}
-
-locals {
-  vtds_vars      = yamldecode(file(find_in_parent_folders("vtds.yaml")))
-  inputs_vars    = yamldecode(file("inputs.yaml"))
-}
-
-dependency "service_project" {
-  config_path = find_in_parent_folders("system/project/deploy")
-
-  mock_outputs = {
-    project_id                              = "gcp-terragrunt-mock-project"
-    mock_outputs_allowed_terraform_commands = ["validate", "plan"]
-  }
-}
-
-dependency "vpc" {
-  config_path = find_in_parent_folders("vpc/deploy")
-}
-
-terraform {
-  source = format("%s?ref=%s", local.inputs_vars.source_module.url, local.inputs_vars.source_module.tag)
-}
-
-inputs = {
-  project_id    = dependency.service_project.outputs.project_id
-  network_name  = "{{ network_name }}"
-  routes        = local.vtds_vars.{{ config_path }}.routes
-}
+#
+description: "Service Account for vTDS Virtual Blades of class {{ blade_class }}"
+display_name: "vTDS {{ blade_class }} Virtual Blade GCE SA"
+grant_xpn_roles: false
+prefix: "vtds-"
+name: "{{ blade_class }}"
+source_module:
+  tag: "v4.0.3"
+  url: "git::https://github.com/terraform-google-modules/terraform-google-service-accounts.git//"

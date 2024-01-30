@@ -54,12 +54,7 @@ dependency "service_account" {
 }
 
 dependency "{{ interconnect_name }}" {
-  config_path = find_in_parent_folders("system/blade_interconnects/{{ interconnect_name }}/subnet/deploy")
-
-  mock_outputs = {
-    subnetwork                              = {}
-    mock_outputs_allowed_terraform_commands = ["validate", "plan"]
-  }
+  config_path = find_in_parent_folders("system/platform/blade-interconnect/{{ interconnect_name }}/subnet/deploy")
 }
 
 terraform {
@@ -73,14 +68,14 @@ inputs = {
   min_cpu_platform                 = local.vtds_vars.{{ config_path }}.vm.min_cpu_platform
   can_ip_forward                   = local.vtds_vars.{{ config_path }}.can_ip_forward
   tags                             = local.vtds_vars.{{ config_path }}.tags
-  labels                           = local.vtds_vars.project.labels
+  labels                           = local.vtds_vars.provider.project.labels
   preemptible                      = local.vtds_vars.{{ config_path }}.availability.preemptible
   spot                             = local.vtds_vars.{{ config_path }}.availability.spot
   automatic_restart                = local.vtds_vars.{{ config_path }}.availability.automatic_restart
   on_host_maintenance              = local.vtds_vars.{{ config_path }}.availability.on_host_maintenance
   spot_instance_termination_action = local.vtds_vars.{{ config_path }}.availability.spot_instance_termination_action
-  region                           = local.vtds_vars.project.region
-  enable_nested_virtualization     = local.vtds_vars.{{ config_path }}.enable_nested_virtualization
+  region                           = local.vtds_vars.provider.project.region
+  enable_nested_virtualization     = local.vtds_vars.{{ config_path }}.vm.enable_nested_virtualization
   threads_per_core                 = local.vtds_vars.{{ config_path }}.vm.threads_per_core
   resource_policies                = local.vtds_vars.{{ config_path }}.resource_policies
   source_image                     = local.vtds_vars.{{ config_path }}.vm.boot_disk.source_image
@@ -92,8 +87,8 @@ inputs = {
   disk_encryption_key              = local.vtds_vars.{{ config_path }}.vm.boot_disk.disk_encryption_key
   auto_delete                      = local.vtds_vars.{{ config_path }}.vm.boot_disk.auto_delete
   additional_disks                 = local.vtds_vars.{{ config_path }}.vm.additional_disks
-  network                          = null
-  subnetwork                       = dependency.{{ interconnect_name }}.outputs.subnetwork
+  network                          = ""
+  subnetwork                       = format("{{ interconnect_name }}-%s", local.vtds_vars.provider.project.region)
   subnetwork_project               = dependency.service_project.outputs.project_id
   nic_type                         = local.vtds_vars.{{ config_path }}.blade_interconnect.nic_type
   stack_type                       = local.vtds_vars.{{ config_path }}.blade_interconnect.stack_type

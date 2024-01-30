@@ -24,7 +24,7 @@
 # terragrunt root hcl
 
 locals {
-  vtds_vars  = yamldecode(file(find_in_parent_folders("vtds.yaml")))
+  vtds_vars  = yamldecode(file("vtds.yaml"))
   trusted_cidrs = setunion(
       local.vtds_vars.provider.organization.trusted_cidrs,
       local.vtds_vars.provider.project.trusted_cidrs

@@ -43,15 +43,16 @@ dependency "service_project" {
 terraform {
   source = format("%s?ref=%s", local.inputs_vars.source_module.url, local.inputs_vars.source_module.tag)
 }
+
 inputs = {
   project_id                               = dependency.service_project.outputs.project_id
-  network_name                             = vtds_vars.{{ config_path }}.network_name
-  description                              = vtds_vars.{{ config_path }}.description
-  routing_mode                             = vtds_vars.{{ config_path }}.routing_mode
+  network_name                             = local.vtds_vars.{{ config_path }}.network_name
+  description                              = local.vtds_vars.{{ config_path }}.description
+  routing_mode                             = local.vtds_vars.{{ config_path }}.routing_mode
   shared_vpc_host                          = false
   auto_create_subnets                      = false
-  mtu                                      = vtds_vars.{{ config_path }}.mtu
-  enable_ipv6_ula                          = vtds_vars.{{ config_path }}.enable_ipv6_ula
-  internal_ipv6_range                      = vtds_vars.{{ config_path }}.internal_ipv6_range
-  network_firewall_policy_enforcment_order = vtds_vars.{{ config_path }}.network_firewall_policy_enforcement_order
+  mtu                                      = local.vtds_vars.{{ config_path }}.mtu
+  enable_ipv6_ula                          = local.vtds_vars.{{ config_path }}.enable_ipv6_ula
+  internal_ipv6_range                      = local.vtds_vars.{{ config_path }}.internal_ipv6_range
+  network_firewall_policy_enforcment_order = local.vtds_vars.{{ config_path }}.network_firewall_policy_enforcement_order
 }
