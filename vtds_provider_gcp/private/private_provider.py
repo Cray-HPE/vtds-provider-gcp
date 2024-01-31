@@ -103,6 +103,18 @@ class PrivateProvider:
         # done them and return.
         self.prepared = True
 
+    def validate(self):
+        """Run the terragrunt plan operation on a prepared GCP
+        provider layer to make sure that the configuration produces a
+        working result.
+
+        """
+        if not self.prepared:
+            raise ContextualError(
+                "cannot validate an unprepared provider, call prepare() first"
+            )
+        self.terragrunt.validate()
+
     def deploy(self):
         """Deploy operation. This drives the application of the
         terraform / terragrunt to create the provider layer
@@ -114,8 +126,7 @@ class PrivateProvider:
             raise ContextualError(
                 "cannot deploy an unprepared provider, call prepare() first"
             )
-        # pylint: disable=fixme
-        # XXX - Implementation needed here!!!!
+        self.terragrunt.deploy()
 
     def shutdown(self, virtual_blade_names):
         """Shutdown operation. This will shut down (power off) the
@@ -141,13 +152,30 @@ class PrivateProvider:
         blades in the provider.
 
         """
-        # pylint: disable=fixme
-        # XXX - implementation needed here!!!!
+        if not self.prepared:
+            raise ContextualError(
+                "cannot deploy an unprepared provider, call prepare() first"
+            )
+        self.terragrunt.dismantle()
+
+    def restore(self):
+        """Restore operation. This will re-provision all virtual
+        blades in the provider removed by the 'dismantle' operation.
+
+        """
+        if not self.prepared:
+            raise ContextualError(
+                "cannot deploy an unprepared provider, call prepare() first"
+            )
+        self.terragrunt.restore()
 
     def remove(self):
         """Remove operation. This will remove all resources
         provisioned for the provider layer.
 
         """
-        # pylint: disable=fixme
-        # XXX - implementation needed here!!!!
+        if not self.prepared:
+            raise ContextualError(
+                "cannot deploy an unprepared provider, call prepare() first"
+            )
+        self.terragrunt.remove()

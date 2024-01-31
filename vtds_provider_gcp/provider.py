@@ -60,6 +60,13 @@ class LayerAPI:
         self.private.prepare()
         self.prepared = True
 
+    def validate(self):
+        """Run any configuration validation that may be appropriate
+        for the provider layer.
+
+        """
+        self.private.validate()
+
     def deploy(self):
         """Deploy the provider (must call prepare() prior to this
         call.
@@ -90,6 +97,13 @@ class LayerAPI:
 
         """
         self.private.dismantle()
+
+    def restore(self):
+        """Restore operation. This will re-provision deprovisioned
+        virtual blades in the provider.
+
+        """
+        self.private.restore()
 
     def remove(self):
         """Remove operation. This will remove all resources

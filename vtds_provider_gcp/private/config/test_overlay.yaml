@@ -1,4 +1,8 @@
 provider:
+  source:
+    index_url: "https://artifactory.algol60.net/artifactory/csm-python-modules/simple"
+    package: vtds-provider-gcp
+    version: "latest"
   organization:
     name: hpe
     billing_account: "01C2AB-21F156-585470"

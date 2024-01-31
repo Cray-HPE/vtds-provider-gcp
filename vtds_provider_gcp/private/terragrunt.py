@@ -28,8 +28,15 @@ supporting elements of a GCP project) on a GCP cloud provider.
 """
 # pylint: disable=consider-using-f-string
 import shutil
+import os.path
+from os import makedirs
+from sys import stdout
+import subprocess
 import yaml
-from vtds_base import ContextualError
+from vtds_base import (
+    ContextualError,
+    LoggedContextualError
+)
 
 from . import TERRAGRUNT_DIR
 
@@ -48,15 +55,158 @@ class Terragrunt:
     # pylint: disable=unused-argument
     def initialize(self, config):
         """Initialize the Terragrunt / Terraform control structures in
-        the 'build' direcntory of the provider plug-in tree so we have
+        the 'build' directory of the provider plug-in tree so we have
         the static content and are ready to absorb dynamic
         content. The 'config' argument provides the provider layer
         configuration to use.
 
         """
-        src = "%s/framework" % (TERRAGRUNT_DIR)
+        src = os.path.join(TERRAGRUNT_DIR, "framework")
         dst = "terragrunt"
         self.add_subtree(src, dst)
+
+    def __run__(self, subdir, operation, tag, timeout=None):
+        """Run a terragrunt command in the specified sub-directory of
+        the build tree capturing the output in separate output and
+        error logs for later analysis.
+
+        """
+        directory = os.path.join(self.build_dir, subdir)
+        logs = os.path.join(self.build_dir, "logs")
+        err_path = os.path.join(
+            logs,
+            "terragrunt_%s[%s]-err.txt" % (operation, tag))
+        out_path = os.path.join(
+            logs,
+            "terragrunt_%s[%s]-out.txt" % (operation, tag))
+        try:
+            makedirs(logs, mode=0o755, exist_ok=True)
+            with open(out_path, 'w', encoding='UTF-8') as out, \
+                 open(err_path, 'w', encoding='UTF-8') as err:
+                try:
+                    stdout.write(
+                        "running terragrunt '%s'[%s] in '%s' " % (
+                            operation,
+                            tag,
+                            directory
+                        )
+                    )
+                    stdout.flush()
+                    with subprocess.Popen(
+                        [
+                            'terragrunt',
+                            'run-all',
+                            operation,
+                            '--terragrunt-non-interactive'
+                        ],
+                        stdout=out,
+                        stderr=err,
+                        cwd=directory
+                    ) as terragrunt:
+                        time = 0
+                        signaled = False
+                        while True:
+                            try:
+                                exitval = terragrunt.wait(timeout=5)
+                            except subprocess.TimeoutExpired:
+                                time += 5
+                                if timeout and time > timeout:
+                                    if not signaled:
+                                        # First try to terminate the process
+                                        terragrunt.terminate()
+                                        continue
+                                    terragrunt.kill()
+                                    print()
+                                    # pylint: disable=raise-missing-from
+                                    raise LoggedContextualError(
+                                        "terragrunt '%s' operation timed out and "
+                                        "did not terminate as requested "
+                                        "after %d seconds" % (operation, time),
+                                        out_path,
+                                        err_path
+                                    )
+                                stdout.write('.')
+                                stdout.flush()
+                                continue
+                            # Didn't time out, so the wait is done.
+                            break
+                        print()
+                except FileNotFoundError as err:
+                    raise ContextualError(
+                        "executing terragrunt '%s' operation failed "
+                        "- %s" % (operation, str(err))
+                    ) from err
+                if exitval != 0:
+                    fmt = (
+                        "terragrunt '%s' operation failed" if not signaled
+                        else "terragrunt '%s' terragrunt operation '%s' "
+                        "timed out"
+                    )
+                    raise LoggedContextualError(
+                        fmt % operation,
+                        out_path,
+                        err_path
+                    )
+        except OSError as err:
+            raise ContextualError(
+                "failed to set up for terragrunt operation '%s' - %s" % (
+                    operation, str(err)
+                )
+            ) from err
+
+    def validate(self):
+        """Run a `terragrunt plan` operation across the Terragrunt /
+        Terraform control structures in the build directory to verify
+        that it all should work.
+
+        """
+        self.__run__("terragrunt", "plan", "validate")
+
+    def deploy(self):
+        """Run a `terragrunt apply operation across the Terragrunt
+        / Terraform control structures in the build directory to
+        create all resources associated with the provider layer.
+
+        """
+        self.__run__("terragrunt", "apply", "deploy")
+
+    def dismantle(self):
+        """Run a `terragrunt destroy operation across the virtual
+        blades in the Terragrunt / Terraform control structures in the
+        build directory to remove virtual blades and their immediate
+        supporting resources.
+
+        """
+        path = os.path.join(
+            "terragrunt",
+            "system",
+            "platform",
+            "virtual-blade"
+        )
+        self.__run__(path, "destroy", "dismantle")
+
+    def restore(self):
+        """Run a `terragrunt apply operation across the virtual blades
+        in the Terragrunt / Terraform control structures in the build
+        directory to create virtual blades and their supporting
+        resources.
+
+        """
+        path = os.path.join(
+            "terragrunt",
+            "system",
+            "platform",
+            "virtual-blade"
+        )
+        self.__run__(path, "apply", "restore")
+
+    def remove(self):
+        """Run a `terragrunt destroy` operation across the Terragrunt
+        / Terraform control structures in the build directory to
+        remove all resources associated with the provider layer.
+
+        """
+        self.__run__("terragrunt", "destroy", "remove")
 
     def template_path(self, sub_path):
         """Given a sub-path in the Terragrunt templates tree, return a
