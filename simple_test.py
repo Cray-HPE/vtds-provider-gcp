@@ -21,18 +21,16 @@ from vtds_base import (
     VTDSStack
 )
 
-# Load the provider layer and create a FullStack object with
-# only that 'provider' layer in it.
-stack = VTDSStack(None, None, None, "vtds_provider_gcp")
+# Create a vTDS stack with the provider and platform layers in it.
+stack = VTDSStack(
+    "vtds_application_ubuntu",
+    "vtds_cluster_common",
+    "vtds_platform_common",
+    "vtds_provider_gcp"
+)
 
-# Obtain the base configuration and test configuration overlay
-# from the provider layer.
-provider_config = stack.get_provider_base_config().get_base_config()
-provider_overlay = stack.get_provider_base_config().get_test_overlay()
-
-# Merge the test configuration overlay onto the base configuration to
-# create a complete configuration for the provider layer.
-config = merge_configs(provider_config, provider_overlay)
+# Get the test configuration from the stack.
+config = stack.get_test_config()
 
 # Initialize the FullStack item to tell all of the layers in it where
 # the scratch directory for building is (in this case
