@@ -28,7 +28,7 @@ supporting elements of a GCP project) on a GCP cloud provider.
 """
 # pylint: disable=consider-using-f-string
 import shutil
-import os.path
+from os.path import join as path_join
 from os import makedirs
 from sys import stdout
 import subprocess
@@ -60,7 +60,7 @@ class Terragrunt:
         configuration to use.
 
         """
-        src = os.path.join(TERRAGRUNT_DIR, "framework")
+        src = path_join(TERRAGRUNT_DIR, "framework")
         dst = "terragrunt"
         self.add_subtree(src, dst)
 
@@ -70,12 +70,12 @@ class Terragrunt:
         error logs for later analysis.
 
         """
-        directory = os.path.join(self.build_dir, subdir)
-        logs = os.path.join(self.build_dir, "logs")
-        err_path = os.path.join(
+        directory = path_join(self.build_dir, subdir)
+        logs = path_join(self.build_dir, "logs")
+        err_path = path_join(
             logs,
             "terragrunt_%s[%s]-err.txt" % (operation, tag))
-        out_path = os.path.join(
+        out_path = path_join(
             logs,
             "terragrunt_%s[%s]-out.txt" % (operation, tag))
         try:
@@ -176,7 +176,7 @@ class Terragrunt:
         supporting resources.
 
         """
-        path = os.path.join(
+        path = path_join(
             "terragrunt",
             "system",
             "platform",
@@ -191,7 +191,7 @@ class Terragrunt:
         resources.
 
         """
-        path = os.path.join(
+        path = path_join(
             "terragrunt",
             "system",
             "platform",

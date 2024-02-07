@@ -24,6 +24,9 @@
 
 """
 
-import os.path
-CONFIG_DIR = os.path.join(os.path.dirname(__file__), "config")
-TERRAGRUNT_DIR = os.path.join(os.path.dirname(__file__), "terragrunt")
+from os.path import (
+    join as path_join,
+    dirname
+)
+CONFIG_DIR = path_join(dirname(__file__), "config")
+TERRAGRUNT_DIR = path_join(dirname(__file__), "terragrunt")

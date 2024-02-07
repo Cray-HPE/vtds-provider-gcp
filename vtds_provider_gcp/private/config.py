@@ -25,7 +25,7 @@ configuration.
 
 """
 
-import os.path
+from os.path import join as path_join
 import yaml
 from vtds_base import ContextualError
 from . import CONFIG_DIR
@@ -47,7 +47,7 @@ class PrivateBaseConfig:
         overall vTDS configuration.
 
         """
-        config = os.path.join(CONFIG_DIR, "config.yaml")
+        config = path_join(CONFIG_DIR, "config.yaml")
         try:
             with open(config, 'r', encoding='UTF-8') as config_stream:
                 return yaml.safe_load(config_stream)
@@ -70,7 +70,7 @@ class PrivateBaseConfig:
         to users.
 
         """
-        config = os.path.join(CONFIG_DIR, "config.yaml")
+        config = path_join(CONFIG_DIR, "config.yaml")
         try:
             with open(config, 'r', encoding='UTF-8') as config_stream:
                 return config_stream.read()
@@ -87,7 +87,7 @@ class PrivateBaseConfig:
         configurations for testing with this provider layer.
 
         """
-        config = os.path.join(CONFIG_DIR, "test_overlay.yaml")
+        config = path_join(CONFIG_DIR, "test_overlay.yaml")
         try:
             with open(config, 'r', encoding='UTF-8') as config_stream:
                 return yaml.safe_load(config_stream)
