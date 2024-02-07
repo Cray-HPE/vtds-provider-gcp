@@ -34,8 +34,7 @@ from sys import stdout
 import subprocess
 import yaml
 from vtds_base import (
-    ContextualError,
-    LoggedContextualError
+    ContextualError
 )
 
 from . import TERRAGRUNT_DIR
@@ -118,7 +117,7 @@ class Terragrunt:
                                     terragrunt.kill()
                                     print()
                                     # pylint: disable=raise-missing-from
-                                    raise LoggedContextualError(
+                                    raise ContextualError(
                                         "terragrunt '%s' operation timed out and "
                                         "did not terminate as requested "
                                         "after %d seconds" % (operation, time),
@@ -142,7 +141,7 @@ class Terragrunt:
                         else "terragrunt '%s' terragrunt operation '%s' "
                         "timed out"
                     )
-                    raise LoggedContextualError(
+                    raise ContextualError(
                         fmt % operation,
                         out_path,
                         err_path
