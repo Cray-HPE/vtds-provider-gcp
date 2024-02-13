@@ -2,32 +2,35 @@ provider:
   source:
     index_url: "https://artifactory.algol60.net/artifactory/csm-python-modules/simple"
     package: vtds-provider-gcp
-    version: "latest"
+    version: null
+  commands:
+    terragrunt: mock_terragrunt
+    gcloud: mock_gcloud
   organization:
-    name: hpe
-    billing_account: "01C2AB-21F156-585470"
-    org_id: "organizations/980209705768"
-    parent: "organizations/980209705768"
-    seed_project: "hpe-dev-seed"
+    name: my-organization
+    billing_account: "012345-6789AB-CDEF01"
+    org_id: "organizations/123456789012"
+    parent: "organizations/123456789012"
+    seed_project: "vtds-seed-project"
     security_owners:
-    - "group:csm-oss-admins@algol60.net"
+    - "group:vtds-admins@my-gcp-domain.net"
     admins:
       all:
-      - "group:csm-oss-admins@algol60.net"
+      - "group:vtds-admins@my-gcp-domain.net"
       dev:
-      - "group:csm-oss-admins@algol60.net"
+      - "group:vtds-admins@my-gcp-domain.net"
       prod:
-      - "group:csm-oss-admins@algol60.net"
+      - "group:vtds-admins@my-gcp-domain.net"
       stage:
-      - "group:csm-oss-admins@algol60.net"
+      - "group:vtds-admins@my-gcp-domain.net"
       global:
-      - "group:csm-oss-admins@algol60.net"
+      - "group:vtds-admins@my-gcp-domain.net"
     trusted_cidrs:
-    - "136.162.34.1/32" # Cray interconnect VPN
+    - "192.160.0.1/32" # interconnect VPN
   project:
     base_name: vtds-test
-    folder_id: "525773635451"
-    group_name: vshasta2-owners
+    folder_id: "257537364515"
+    group_name: vtds-owners
   blade_interconnects:
     test-interconnect:
       # A blade interconnect for testing interconnect inheritance

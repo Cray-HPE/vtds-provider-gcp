@@ -24,8 +24,8 @@ from vtds_base import (
 # Create a vTDS stack with the provider and platform layers in it.
 stack = VTDSStack(
     "vtds_application_ubuntu",
-    "vtds_cluster_common",
-    "vtds_platform_common",
+    "vtds_cluster_kvm",
+    "vtds_platform_ubuntu",
     "vtds_provider_gcp"
 )
 

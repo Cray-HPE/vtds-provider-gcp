@@ -30,11 +30,12 @@ supporting elements of a GCP project) on a GCP cloud provider.
 import shutil
 from os.path import join as path_join
 from os import makedirs
-from sys import stdout
 import subprocess
 import yaml
 from vtds_base import (
-    ContextualError
+    ContextualError,
+    logfile,
+    write_out
 )
 
 from . import TERRAGRUNT_DIR
@@ -50,6 +51,7 @@ class Terragrunt:
 
         """
         self.build_dir = build_dir
+        self.tg_cmd = "terragrunt"
 
     # pylint: disable=unused-argument
     def initialize(self, config):
@@ -60,6 +62,9 @@ class Terragrunt:
         configuration to use.
 
         """
+        self.tg_cmd = config.get("commands", {}).get(
+            'terragrunt', "terragrunt"
+        )
         src = path_join(TERRAGRUNT_DIR, "framework")
         dst = "terragrunt"
         self.add_subtree(src, dst)
@@ -80,27 +85,20 @@ class Terragrunt:
             "terragrunt_%s[%s]-out.txt" % (operation, tag))
         try:
             makedirs(logs, mode=0o755, exist_ok=True)
-            with open(out_path, 'w', encoding='UTF-8') as out, \
-                 open(err_path, 'w', encoding='UTF-8') as err:
+            with logfile(out_path) as out, logfile(err_path) as err:
                 try:
-                    stdout.write(
-                        "running terragrunt '%s'[%s] in '%s' " % (
-                            operation,
-                            tag,
-                            directory
-                        )
+                    write_out(
+                        "running terragrunt '%s'[%s] in "
+                        "'%s' " % (operation, tag, directory)
                     )
-                    stdout.flush()
                     with subprocess.Popen(
                         [
-                            'terragrunt',
+                            self.tg_cmd,
                             'run-all',
                             operation,
                             '--terragrunt-non-interactive'
                         ],
-                        stdout=out,
-                        stderr=err,
-                        cwd=directory
+                        stdout=out, stderr=err, cwd=directory
                     ) as terragrunt:
                         time = 0
                         signaled = False
@@ -118,14 +116,12 @@ class Terragrunt:
                                     print()
                                     # pylint: disable=raise-missing-from
                                     raise ContextualError(
-                                        "terragrunt '%s' operation timed out and "
-                                        "did not terminate as requested "
+                                        "terragrunt '%s' operation timed out "
+                                        "and did not terminate as expected "
                                         "after %d seconds" % (operation, time),
-                                        out_path,
-                                        err_path
+                                        out_path, err_path
                                     )
-                                stdout.write('.')
-                                stdout.flush()
+                                write_out('.')
                                 continue
                             # Didn't time out, so the wait is done.
                             break
@@ -139,7 +135,7 @@ class Terragrunt:
                     fmt = (
                         "terragrunt '%s' operation failed" if not signaled
                         else "terragrunt '%s' terragrunt operation '%s' "
-                        "timed out"
+                        "timed out and was killed"
                     )
                     raise ContextualError(
                         fmt % operation,

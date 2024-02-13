@@ -71,6 +71,10 @@ test = [
     'coverage~=7.4',
 ]
 
+[project.scripts]
+mock_gcloud = "vtds_provider_gcp.mock:mock_gcloud"
+mock_terragrunt = "vtds_provider_gcp.mock:mock_terragrunt"
+
 # Defines which folders belong to our package.
 [tool.setuptools.packages.find]
 include = ['vtds_provider_gcp*', 'vtds_provider_gcp.private*']

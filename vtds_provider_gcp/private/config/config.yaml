@@ -3,8 +3,7 @@ provider:
     # This identifies the python module containing the GCP provider
     # layer for vTDS, its version and the URL of the pip index. Any
     # necessary authentication is assumed to be handled by a '.netrc'
-    # or may be injected using ARTIFACTORY_USER and
-    # ARTIFACTORY_PASSWORD environments.
+    # with the user / service account credentials.
     #
     # This is included in the base configuration not to be used from
     # there, but as an example of what it would look like in your
@@ -17,7 +16,17 @@ provider:
     # going.
     index_url: "https://artifactory.algol60.net/artifactory/csm-python-modules/simple"
     package: vtds-provider-gcp
-    version: "latest"  # Any version or "latest" to take the latest version
+     # any version specifier in pip dependency format or null which
+     # will get the latest
+    version: null
+  commands:
+    # This section contains the commands that will be used from within
+    # the layer to execute actions initiated by the layer. They are
+    # specified here to facilitate mocking and in case the commands
+    # should need to change.
+    terragrunt: "terragrunt"
+    gcloud: "gcloud"
+    
   organization:
     # What you want to call your organization, not necessarily tied to
     # GCP data anywhere. Lowercase and numeric with dashes.
