@@ -73,13 +73,15 @@ class PrivateProvider:
             # the expanded result back into the configuration. That
             # way, when we write out the configuration we have the
             # full expansion there.
-            blade_config = expand_inheritance(blade_types, key)
-            blade_types[key] = blade_config
-            if blade_config.get('pure_base_class', False):
-                # Skip installation of pure base classes...
+            if blade_types[key].get('pure_base_class', False):
+                # Skip inheritance and installation for pure base
+                # classes since they have no parents, and they aren't
+                # used for deployment.
                 continue
+            blade_config = expand_inheritance(blade_types, key)
             virtual_blade = VirtualBlade(self.terragrunt)
-            virtual_blade.initialize(key, blade_config)
+            blade_config = virtual_blade.initialize(key, blade_config)
+            blade_types[key] = blade_config
         interconnect_types = self.config.get('blade_interconnects', None)
         if interconnect_types is None:
             raise ContextualError(
@@ -87,13 +89,17 @@ class PrivateProvider:
                 "configuration"
             )
         for key in interconnect_types:
-            interconnect_config = expand_inheritance(interconnect_types, key)
-            interconnect_types[key] = interconnect_config
-            if interconnect_config.get('pure_base_class', False):
-                # Skip installation of pure base classes...
+            if interconnect_types[key].get('pure_base_class', False):
+                # Skip inheritance and installation for pure base
+                # classes since they have no parents, and they aren't
+                # used for deployment.
                 continue
+            interconnect_config = expand_inheritance(interconnect_types, key)
             blade_interconnect = BladeInterconnect(self.terragrunt)
-            blade_interconnect.initialize(key, interconnect_config)
+            interconnect_config = blade_interconnect.initialize(
+                key, interconnect_config
+            )
+            interconnect_types[key] = interconnect_config
         # Now that we have fully expanded all of the inheritance and
         # set up the terragrunt controls for everything that is going
         # to get them, set up the terragrunt configuration.

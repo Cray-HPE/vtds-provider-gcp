@@ -47,6 +47,66 @@ class BladeInterconnect:
         """
         self.terragrunt = terragrunt
 
+    @staticmethod
+    def _make_old_style_rule(rule, direction):
+        """Using a new style ingress or egress rule construct an
+        old-style firewall rule for the soon to be deprecated 'rules'
+        variable.
+
+        """
+        direction = "INGRESS" if direction == 'ingress_rules' else "EGRESS"
+        range_type = (
+            "source_ranges" if direction == "INGRESS" else "destination_ranges"
+        )
+        return {
+            'name': rule.get('name', None),
+            'description': rule.get('description', ""),
+            'direction': direction,
+            'disabled': rule.get('disabled', False),
+            'priority': rule.get('priority', 100),
+            'ranges': rule.get(range_type, []),
+            'source_tags': rule.get('source_tags', []),
+            'source_service_accounts': rule.get('source_service_accounts', []),
+            'target_tags': rule.get('target_tags', []),
+            'target_service_accounts': rule.get('target_service_accounts', []),
+            'allow': rule.get('allow', []),
+            'deny': rule.get('deny', []),
+            'log_config': rule.get('log_config', {}),
+        }
+        
+    @classmethod
+    def _convert_firewalls(cls, interconnect_config):
+        """Convert ingress and egress firewall rules in a
+        blade-interconnect configuration from maps to lists so that
+        terragrunt can use them.
+
+        """
+        no_rules = {'ingress_rules': {}, 'egress_rules': {}}
+        firewall = interconnect_config.get('firewall', no_rules)
+        overall_rules = []
+        for direction in ['ingress_rules', 'egress_rules']:
+            rule_list = []
+            rule_map = firewall.get(direction, {})
+            for _, rule in rule_map.items():
+                if rule.get('delete', False):
+                    continue
+                # 'delete' is not part of the firewall rule, it is
+                # used to control whether rules are kept through
+                # inheritance or not, so remove the key so it doesn't
+                # confuse terragrunt / google.
+                try:
+                    del rule['delete']
+                except KeyError:
+                    pass
+                rule_list.append(rule)
+                overall_rules.append(cls._make_old_style_rule(rule, direction))
+            # Replace the map (if any) with the list. If no map was there, it
+            # is now an explicit empty list.
+            firewall[direction] = rule_list
+        # Add the soon to be deprecated 'rules' entry to the firewall too.
+        firewall['rules'] = overall_rules
+        return interconnect_config
+
     def initialize(self, key, interconnect_config):
         """Using the name of the blade interconnect configuration
         found in 'key' and the blade interconnect configuration found
@@ -55,6 +115,9 @@ class BladeInterconnect:
         'terragrunt'.
 
         """
+        # Convert the firewall rule maps into lists for terragrunt
+        interconnect_config = self._convert_firewalls(interconnect_config)
+
         # Locate the top of the template for blade_interconnects
         template_dir = self.terragrunt.template_path(
             path_join("system", "platform", "blade-interconnect")
@@ -83,3 +146,4 @@ class BladeInterconnect:
 
         # Render the templated files in the build tree.
         render_templated_tree(["*.hcl", "*.yaml"], render_data, build_dir)
+        return interconnect_config

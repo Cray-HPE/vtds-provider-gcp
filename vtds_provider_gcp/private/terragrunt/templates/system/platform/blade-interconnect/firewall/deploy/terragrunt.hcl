@@ -51,7 +51,13 @@ terraform {
 inputs = {
   project_id    = dependency.service_project.outputs.project_id
   network_name  = "{{ network_name }}"
-  rules         = [] # Deprecated, so no way to set this, use ingress/egress rules
-  ingress_rules = local.vtds_vars.{{ config_path }}.firewall.ingress_rules
-  egress_rules  = local.vtds_vars.{{ config_path }}.firewall.egress_rules
+  # While 'rules' is soon to be deprecated in favor of 'ingress_rules'
+  # and 'egress_rules', there is no released version of the terraform
+  # yet in which that has been done, so for now we use 'rules'. Once the
+  # deprecation has been made official, then we can swap the commented
+  # out settings for the 'rules' setting and go on our way. All of the
+  # infrastructure is in place for that in the layer code.
+  rules         = local.vtds_vars.{{ config_path }}.firewall.rules
+#  ingress_rules = local.vtds_vars.{{ config_path }}.firewall.ingress_rules
+#  egress_rules  = local.vtds_vars.{{ config_path }}.firewall.egress_rules
 }

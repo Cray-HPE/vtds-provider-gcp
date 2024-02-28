@@ -196,47 +196,55 @@ provider:
       ipv6_access_type: null
       firewall:
         ingress_rules:
-          description: "Base Network Firewall Default Ingress"
-          default: {}
-          type:
-            base_network_ingress:
-              name: "base-network-default-ingress"
-              description: "allow SSH ingress from GCP's Identity Aware Proxy (IAP)"
-              disabled: false
-              priority: 100
-              destination_rages: []
-              source_ranges:
-                - "35.235.240.0/20"
-              source_tags: []
-              source_service_accounts: []
-              target_tags: []
-              target_service_accounts: []
-              allow:
-                - protocol: tcp
-                  ports:
-                    - "22"
-              deny: []
-              log_config: null
+          iap_ssh_ingress:
+            name: "iap-ssh-ingress"
+            description: "allow SSH ingress from GCP's Identity Aware Proxy (IAP)"
+            disabled: false
+            priority: 100
+            destination_ranges: null
+            source_ranges:
+              - "35.235.240.0/20"
+            source_tags: null
+            source_service_accounts: null
+            target_tags: null
+            target_service_accounts: null
+            allow:
+              - protocol: tcp
+                ports:
+                  - "22"
+            deny: []
+            log_config: null
+            # Since we update this information by merging, there is no
+            # native way to remove a map entry in an overlay. To
+            # remove this firewall rule from a derived
+            # blade-interconnect type, set 'delete' to true and it
+            # will be dropped in the derived type.
+            delete: false
         egress_rules:
-          description: "Base Network Firewall Default Egress"
-          default: {}
-          type:
-            base_network_egress:
-              name: "base-network-default-egress"
-              description: "allow egress from anywhere to anywhere"
-              disabled: false
-              priority: 100
-              destination_rages:
-                - "0.0.0.0/0"
-              source_ranges:
-                - "0.0.0.0/0"
-              source_tags: []
-              source_service_accounts: []
-              target_tags: []
-              target_service_accounts: []
-              allow: []
-              deny: []
-              log_config: null
+          unrestricted_external_egress:
+            name: "unrestricted-external-egress"
+            description: "allow egress from anywhere inside to anywhere outside"
+            disabled: false
+            priority: 100
+            destination_ranges:
+              - "0.0.0.0/0"
+            source_ranges:
+              - "0.0.0.0/0"
+            source_tags: null
+            source_service_accounts: null
+            target_tags: null
+            target_service_accounts: null
+            allow:
+              - protocol: "all"
+                ports: []
+            deny: []
+            log_config: null
+            # Since we update this information by merging, there is no
+            # native way to remove a map entry in an overlay. To
+            # remove this firewall rule from a derived
+            # blade-interconnect type, set 'delete' to true and it
+            # will be dropped in the derived type.
+            delete: false
       routes:
         # Routes are very platform and application specific, so the
         # settings here are just here to give a template, not to be used

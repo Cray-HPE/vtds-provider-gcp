@@ -91,6 +91,7 @@ class VirtualBlade:
 
         # Render the templated files in the build tree.
         render_templated_tree(["*.hcl", "*.yaml"], render_data, build_dir)
+        return blade_config
 
     def deploy(self):
         """Placeholder for a deploy operation...
