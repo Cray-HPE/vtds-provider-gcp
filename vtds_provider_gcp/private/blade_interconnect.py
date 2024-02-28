@@ -28,6 +28,7 @@ associated GCP Virtual Private Clouds (VPCs) into a platform
 implemented as a GCP project.
 
 """
+from os.path import join as path_join
 from vtds_base import (
     ContextualError,
     render_templated_tree
@@ -56,13 +57,15 @@ class BladeInterconnect:
         """
         # Locate the top of the template for blade_interconnects
         template_dir = self.terragrunt.template_path(
-            "system/platform/blade-interconnect"
+            path_join("system", "platform", "blade-interconnect")
         )
 
         # Copy the templates into the build tree before rendering them.
         build_dir = self.terragrunt.add_subtree(
             template_dir,
-            "terragrunt/system/platform/blade-interconnect/%s" % (key)
+            path_join(
+                "terragrunt", "system", "platform", "blade-interconnect", key
+            )
         )
 
         # Compose the data to be used in rendering the templated files.
