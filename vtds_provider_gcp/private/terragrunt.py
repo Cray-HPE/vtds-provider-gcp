@@ -208,14 +208,16 @@ class Terragrunt:
         full path to that location.
 
         """
-        return "%s/templates/%s" % (TERRAGRUNT_DIR, sub_path)
+        return path_join(
+            TERRAGRUNT_DIR,"templates", sub_path
+        )
 
     def build_path(self, sub_path):
         """Given a sub-path to a file or directory within the provider
         layer build tree, return the absolute path.
 
         """
-        return "%s/%s" % (self.build_dir, sub_path)
+        return path_join(self.build_dir, sub_path)
 
     def add_subtree(self, src, dst):
         """Copy a sub-tree into the 'build' tree in the provider
@@ -285,7 +287,9 @@ class TerragruntConfig:
 
         # Write out the vtds.yaml that results from the fully resolved
         # configuration.
-        config_path = self.terragrunt_env.build_path("terragrunt/vtds.yaml")
+        config_path = self.terragrunt_env.build_path(
+            path_join("terragrunt","vtds.yaml")
+        )
         try:
             with open(config_path, 'w', encoding="UTF-8") as config_file:
                 # Make sure that we get a simple YAML file without

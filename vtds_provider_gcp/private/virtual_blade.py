@@ -27,7 +27,7 @@ deploying Virtual Blades implemented as GCP Compute Instances into a
 platform implemented as a GCP project.
 
 """
-
+from os.path import join as path_join
 from vtds_base import (
     ContextualError,
     render_templated_tree
@@ -55,13 +55,13 @@ class VirtualBlade:
         """
         # Locate the top of the template for blade_interconnects
         template_dir = self.terragrunt.template_path(
-            "system/platform/virtual-blade"
+            path_join("system", "platform", "virtual-blade")
         )
 
         # Copy the templates into the build tree before rendering them.
         build_dir = self.terragrunt.add_subtree(
             template_dir,
-            "terragrunt/system/platform/virtual-blade/%s" % (key)
+            path_join("terragrunt", "system", "platform", "virtual-blade", key)
         )
 
         # Compose the data to be used in rendering the templated files.
@@ -91,6 +91,7 @@ class VirtualBlade:
 
         # Render the templated files in the build tree.
         render_templated_tree(["*.hcl", "*.yaml"], render_data, build_dir)
+        return blade_config
 
     def deploy(self):
         """Placeholder for a deploy operation...
