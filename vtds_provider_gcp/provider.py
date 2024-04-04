@@ -111,3 +111,17 @@ class LayerAPI:
 
         """
         self.private.remove()
+
+    def get_virtual_blades(self):
+        """Return a the VirtualBlades object containing all of the
+        available non-pure-base-class Virtual Blades.
+
+        """
+        return self.private.get_virtual_blades()
+
+    def get_blade_interconnects(self):
+        """Return a BladeInterconnects object containing all the
+        available non-pure-base-class Blade Interconnects.
+
+        """
+        return self.private.get_blade_interconnects()

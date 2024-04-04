@@ -73,7 +73,7 @@ class BladeInterconnect:
             'deny': rule.get('deny', []),
             'log_config': rule.get('log_config', {}),
         }
-        
+
     @classmethod
     def _convert_firewalls(cls, interconnect_config):
         """Convert ingress and egress firewall rules in a
