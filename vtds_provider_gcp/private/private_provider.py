@@ -36,7 +36,11 @@ from .terragrunt import (
 )
 from .virtual_blade import VirtualBlade
 from .blade_interconnect import BladeInterconnect
-
+from .api_objects import (
+    APIVirtualBladeType,
+    APIVirtualBlade,
+    APIBladeInterconnect
+)
 
 class PrivateProvider:
     """PrivateProvider class, implements the GCP provider layer
@@ -185,3 +189,18 @@ class PrivateProvider:
                 "cannot deploy an unprepared provider, call prepare() first"
             )
         self.terragrunt.remove()
+
+
+    def get_virtual_blades(self):
+        """Return a the VirtualBlades object containing all of the
+        available non-pure-base-class Virtual Blades.
+
+        """
+        return __VirtualBlades(self.config)
+
+    def get_blade_interconnects(self):
+        """Return a BladeInterconnects object containing all the
+        available non-pure-base-class Blade Interconnects.
+
+        """
+        return __BladeInterconnects(self.config)

@@ -37,7 +37,7 @@ from vtds_base import (
 class VirtualBlade:
     """Class representing a single virtual blade type as defined in
     the vTDS configuration and implemented in the vTDS Terragrunt
-    configuration / constrol struture.
+    configuration / control struture.
 
     """
     def __init__(self, terragrunt):
