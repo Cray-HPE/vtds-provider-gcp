@@ -36,6 +36,10 @@ from .terragrunt import (
 )
 from .virtual_blade import VirtualBlade
 from .blade_interconnect import BladeInterconnect
+from .api_objects import (
+    PrivateVirtualBlades,
+    PrivateBladeInterconnects
+)
 
 
 class PrivateProvider:
@@ -50,6 +54,7 @@ class PrivateProvider:
 
         """
         self.config = config
+        self.build_dir = build_dir
         self.terragrunt = Terragrunt(build_dir)
         self.terragrunt_config = TerragruntConfig(self.terragrunt)
         self.stack = stack
@@ -185,3 +190,17 @@ class PrivateProvider:
                 "cannot deploy an unprepared provider, call prepare() first"
             )
         self.terragrunt.remove()
+
+    def get_virtual_blades(self):
+        """Return a the VirtualBlades object containing all of the
+        available non-pure-base-class Virtual Blades.
+
+        """
+        return PrivateVirtualBlades(self.config, self.build_dir)
+
+    def get_blade_interconnects(self):
+        """Return a BladeInterconnects object containing all the
+        available non-pure-base-class Blade Interconnects.
+
+        """
+        return PrivateBladeInterconnects(self.config, self.build_dir)

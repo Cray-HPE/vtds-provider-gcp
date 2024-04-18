@@ -76,7 +76,7 @@ class Terragrunt:
 
         """
         directory = path_join(self.build_dir, subdir)
-        logs = path_join(self.build_dir, "logs")
+        logs = path_join(directory, "logs")
         err_path = path_join(
             logs,
             "terragrunt_%s[%s]-err.txt" % (operation, tag))
@@ -209,7 +209,7 @@ class Terragrunt:
 
         """
         return path_join(
-            TERRAGRUNT_DIR,"templates", sub_path
+            TERRAGRUNT_DIR, "templates", sub_path
         )
 
     def build_path(self, sub_path):
@@ -288,7 +288,7 @@ class TerragruntConfig:
         # Write out the vtds.yaml that results from the fully resolved
         # configuration.
         config_path = self.terragrunt_env.build_path(
-            path_join("terragrunt","vtds.yaml")
+            path_join("terragrunt", "vtds.yaml")
         )
         try:
             with open(config_path, 'w', encoding="UTF-8") as config_file:
