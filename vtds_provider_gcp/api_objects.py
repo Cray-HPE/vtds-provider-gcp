@@ -148,3 +148,30 @@ class BladeConnection(metaclass=ABCMeta):
         address of the connection to the Virtual Blade.
 
         """
+
+
+class Secrets:
+    """Provider Layers Secrets API object. Provides ways to populate
+    and retrieve secrets through the Provider layer. Secrets are
+    created by the provider layer by declaring them in the Provider
+    configuration for your vTDS system, and should be known by their
+    names as filled out in various places and verious layers in your
+    vTDS system. For example the SSH key pair used to talk to a
+    particular set of Virtual Blades through a blade connection is
+    stored in a secret configured in the Provider layer and the name
+    of that secret can be obtained from a VirtualBlades API object
+    using the blade_ssh_key_secret() method.
+
+    """
+    @abstractmethod
+    def store(self, name, value):
+        """Store a value (string) in the named secret.
+
+        """
+
+    @abstractmethod
+    def read(self, name):
+        """Read the value (string) stored in a named secret. If no
+        value is present, return None.
+
+        """

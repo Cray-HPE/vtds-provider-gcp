@@ -84,6 +84,7 @@ provider:
       - "cloudresourcemanager.googleapis.com"
       - "iam.googleapis.com"
       - "serviceusage.googleapis.com"
+      - "secretmanager.googleapis.com"
 
     auto_create_network: false
 
@@ -326,6 +327,13 @@ provider:
             disk_type: "pd-standard"
             disk_labels: {}
             source_snapshot: null
+      # This is the name of the secret that will be set up to hold
+      # the SSH key needed to connect by SSH to blades of this
+      # class. If you want to isolate blades of different classes to
+      # different SSH users, you can do that by creating different
+      # secrets and using them here instead of this one for those
+      # derived classes.
+      ssh_key_secret: blade-ssh-key
       blade_interconnect:
         network: ""
         subnetwork: "base-interconnect"
@@ -377,3 +385,20 @@ provider:
       ipv6_access_config: []
       gpu: null
       resource_policies: []
+  secrets:
+    blade_ssh_keys:
+      # The SSH public / private key pair used by the provider layer
+      # to talk to Virtual Blades. The public key will be added to
+      # '/root/.ssh/authorized_keys' upon deployment of virtual
+      # blades.
+      name: blade-ssh-key
+      # Key value pairs used as labels in the secret to identify
+      # its function. Generally not used, but here if you want it. No
+      # more than 64 labels can be assigned.
+      labels: {}
+      # Key value pairs, similar to labels. There will always be
+      # a 'layer' annotation indicating what layer requested creation
+      # of the secret. The total size of annotation keys and values
+      # must be less than 16KiB.
+      annotations:
+        layer: provider
