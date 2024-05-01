@@ -125,3 +125,10 @@ class LayerAPI:
 
         """
         return self.private.get_blade_interconnects()
+
+    def get_secrets(self):
+        """Return a Secrets API object that provides access to all
+        available secrets.
+
+        """
+        return self.private.get_secrets()

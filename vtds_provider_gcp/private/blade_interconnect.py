@@ -75,9 +75,9 @@ class BladeInterconnect:
         }
 
     @classmethod
-    def _convert_firewalls(cls, interconnect_config):
-        """Convert ingress and egress firewall rules in a
-        blade-interconnect configuration from maps to lists so that
+    def __convert_firewalls(cls, interconnect_config):
+        """Class Private: Convert ingress and egress firewall rules in
+        a blade-interconnect configuration from maps to lists so that
         terragrunt can use them.
 
         """
@@ -116,7 +116,7 @@ class BladeInterconnect:
 
         """
         # Convert the firewall rule maps into lists for terragrunt
-        interconnect_config = self._convert_firewalls(interconnect_config)
+        interconnect_config = self.__convert_firewalls(interconnect_config)
 
         # Locate the top of the template for blade_interconnects
         template_dir = self.terragrunt.template_path(

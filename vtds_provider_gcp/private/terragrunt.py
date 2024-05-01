@@ -27,13 +27,17 @@ supporting elements of a GCP project) on a GCP cloud provider.
 
 """
 # pylint: disable=consider-using-f-string
-import shutil
+from shutil import (
+    copy,
+    copytree,
+    rmtree
+)
 from os.path import join as path_join
-from os import makedirs
-import subprocess
+from subprocess import Popen, TimeoutExpired
 import yaml
 from vtds_base import (
     ContextualError,
+    log_paths,
     logfile,
     write_out
 )
@@ -46,108 +50,106 @@ class Terragrunt:
     Terragrunt / Terraform definition of a GCP provided platform.
 
     """
-    def __init__(self, build_dir):
+    def __init__(self, common):
         """Constructor
 
         """
-        self.build_dir = build_dir
+        self.common = common
         self.tg_cmd = "terragrunt"
 
     # pylint: disable=unused-argument
-    def initialize(self, config):
+    def initialize(self):
         """Initialize the Terragrunt / Terraform control structures in
         the 'build' directory of the provider plug-in tree so we have
         the static content and are ready to absorb dynamic
-        content. The 'config' argument provides the provider layer
-        configuration to use.
+        content.
 
         """
-        self.tg_cmd = config.get("commands", {}).get(
+        # Figure out the terragrunt command to use from the
+        # configuration.
+        self.tg_cmd = self.common.get("commands", {}).get(
             'terragrunt', "terragrunt"
         )
+
+        # Clear out any old terragrunt tree from the build
+        # directory. There is potential cached state that can become
+        # corrupted and cause spurious failures.
+        rmtree(self.build_path("terragrunt"), ignore_errors=True)
+
+        # Put the initial structure of the terragrunt tree in place in
+        # the build directory.
         src = path_join(TERRAGRUNT_DIR, "framework")
         dst = "terragrunt"
         self.add_subtree(src, dst)
 
-    def __run__(self, subdir, operation, tag, timeout=None):
+    def __run(self, subdir, operation, tag, timeout=None):
         """Run a terragrunt command in the specified sub-directory of
         the build tree capturing the output in separate output and
         error logs for later analysis.
 
         """
-        directory = path_join(self.build_dir, subdir)
-        logs = path_join(directory, "logs")
-        err_path = path_join(
-            logs,
-            "terragrunt_%s[%s]-err.txt" % (operation, tag))
-        out_path = path_join(
-            logs,
-            "terragrunt_%s[%s]-out.txt" % (operation, tag))
-        try:
-            makedirs(logs, mode=0o755, exist_ok=True)
-            with logfile(out_path) as out, logfile(err_path) as err:
-                try:
-                    write_out(
-                        "running terragrunt '%s'[%s] in "
-                        "'%s' " % (operation, tag, directory)
-                    )
-                    with subprocess.Popen(
-                        [
-                            self.tg_cmd,
-                            'run-all',
-                            operation,
-                            '--terragrunt-non-interactive'
-                        ],
-                        stdout=out, stderr=err, cwd=directory
-                    ) as terragrunt:
-                        time = 0
-                        signaled = False
-                        while True:
-                            try:
-                                exitval = terragrunt.wait(timeout=5)
-                            except subprocess.TimeoutExpired:
-                                time += 5
-                                if timeout and time > timeout:
-                                    if not signaled:
-                                        # First try to terminate the process
-                                        terragrunt.terminate()
-                                        continue
-                                    terragrunt.kill()
-                                    print()
-                                    # pylint: disable=raise-missing-from
-                                    raise ContextualError(
-                                        "terragrunt '%s' operation timed out "
-                                        "and did not terminate as expected "
-                                        "after %d seconds" % (operation, time),
-                                        out_path, err_path
-                                    )
-                                write_out('.')
-                                continue
-                            # Didn't time out, so the wait is done.
-                            break
-                        print()
-                except FileNotFoundError as err:
-                    raise ContextualError(
-                        "executing terragrunt '%s' operation failed "
-                        "- %s" % (operation, str(err))
-                    ) from err
-                if exitval != 0:
-                    fmt = (
-                        "terragrunt '%s' operation failed" if not signaled
-                        else "terragrunt '%s' terragrunt operation '%s' "
-                        "timed out and was killed"
-                    )
-                    raise ContextualError(
-                        fmt % operation,
-                        out_path,
-                        err_path
-                    )
-        except OSError as err:
-            raise ContextualError(
-                "failed to set up for terragrunt operation '%s' - %s" % (
-                    operation, str(err)
+        directory = path_join(self.common.build_dir(), subdir)
+        out_path, err_path = log_paths(
+            self.common.build_dir(),
+            "terragrunt_%s[%s]" % (operation, tag)
+        )
+        with logfile(out_path) as out, logfile(err_path) as err:
+            try:
+                write_out(
+                    "running terragrunt '%s'[%s] in "
+                    "'%s' " % (operation, tag, directory)
                 )
-            ) from err
+                with Popen(
+                    [
+                        self.tg_cmd,
+                        'run-all',
+                        operation,
+                        '--terragrunt-non-interactive'
+                    ],
+                    stdout=out, stderr=err, cwd=directory
+                ) as terragrunt:
+                    time = 0
+                    signaled = False
+                    while True:
+                        try:
+                            exitval = terragrunt.wait(timeout=5)
+                        except TimeoutExpired:
+                            time += 5
+                            if timeout and time > timeout:
+                                if not signaled:
+                                    # First try to terminate the process
+                                    terragrunt.terminate()
+                                    continue
+                                terragrunt.kill()
+                                print()
+                                # pylint: disable=raise-missing-from
+                                raise ContextualError(
+                                    "terragrunt '%s' operation timed out "
+                                    "and did not terminate as expected "
+                                    "after %d seconds" % (operation, time),
+                                    out_path, err_path
+                                )
+                            write_out('.')
+                            continue
+                        # Didn't time out, so the wait is done.
+                        break
+                    print()
+            except FileNotFoundError as err:
+                raise ContextualError(
+                    "executing terragrunt '%s' operation failed "
+                    "- %s" % (operation, str(err))
+                ) from err
+            if exitval != 0:
+                fmt = (
+                    "terragrunt '%s' operation failed" if not signaled
+                    else "terragrunt '%s' terragrunt operation '%s' "
+                    "timed out and was killed"
+                )
+                raise ContextualError(
+                    fmt % operation,
+                    out_path,
+                    err_path
+                )
 
     def validate(self):
         """Run a `terragrunt plan` operation across the Terragrunt /
@@ -155,7 +157,7 @@ class Terragrunt:
         that it all should work.
 
         """
-        self.__run__("terragrunt", "plan", "validate")
+        self.__run("terragrunt", "plan", "validate")
 
     def deploy(self):
         """Run a `terragrunt apply operation across the Terragrunt
@@ -163,7 +165,7 @@ class Terragrunt:
         create all resources associated with the provider layer.
 
         """
-        self.__run__("terragrunt", "apply", "deploy")
+        self.__run("terragrunt", "apply", "deploy")
 
     def dismantle(self):
         """Run a `terragrunt destroy operation across the virtual
@@ -178,7 +180,7 @@ class Terragrunt:
             "platform",
             "virtual-blade"
         )
-        self.__run__(path, "destroy", "dismantle")
+        self.__run(path, "destroy", "dismantle")
 
     def restore(self):
         """Run a `terragrunt apply operation across the virtual blades
@@ -193,7 +195,7 @@ class Terragrunt:
             "platform",
             "virtual-blade"
         )
-        self.__run__(path, "apply", "restore")
+        self.__run(path, "apply", "restore")
 
     def remove(self):
         """Run a `terragrunt destroy` operation across the Terragrunt
@@ -201,7 +203,7 @@ class Terragrunt:
         remove all resources associated with the provider layer.
 
         """
-        self.__run__("terragrunt", "destroy", "remove")
+        self.__run("terragrunt", "destroy", "remove")
 
     def template_path(self, sub_path):
         """Given a sub-path in the Terragrunt templates tree, return a
@@ -217,7 +219,7 @@ class Terragrunt:
         layer build tree, return the absolute path.
 
         """
-        return path_join(self.build_dir, sub_path)
+        return path_join(self.common.build_dir(), sub_path)
 
     def add_subtree(self, src, dst):
         """Copy a sub-tree into the 'build' tree in the provider
@@ -230,12 +232,13 @@ class Terragrunt:
         """
         real_dst = self.build_path(dst)
         try:
-            shutil.copytree(
+            copytree(
                 src=src,
                 dst=real_dst,
                 symlinks=False,
                 ignore=None,
-                dirs_exist_ok=True)
+                dirs_exist_ok=True
+            )
         except OSError as err:
             raise ContextualError(
                 "error copying tree '%s' to '%s': %s" % (
@@ -254,7 +257,7 @@ class Terragrunt:
         """
         real_dst = self.build_path(dst)
         try:
-            shutil.copy(src, real_dst)
+            copy(src, real_dst)
         except OSError as err:
             raise ContextualError(
                 "error copying '%s' to '%s': %s" % (src, real_dst, str(err))
@@ -268,13 +271,14 @@ class TerragruntConfig:
     a specified Terragrunt environment.
 
     """
-    def __init__(self, terragrunt):
+    def __init__(self, common, terragrunt):
         """Constructor
 
         """
+        self.common = common
         self.terragrunt_env = terragrunt
 
-    def initialize(self, config):
+    def initialize(self):
         """Given the provider configuration data structure, Populate a
         Terragrunt / Terraform configuration in the 'build' tree of
         the provider plug-in tree.
@@ -283,7 +287,7 @@ class TerragruntConfig:
         # Add the 'provider' layer back to the config so that the
         # vtds.yaml has a config that parallels the full-stack
         # configuration from which it was taken.
-        provider_config = {'provider': config}
+        provider_config = {'provider': self.common.get_config()}
 
         # Write out the vtds.yaml that results from the fully resolved
         # configuration.

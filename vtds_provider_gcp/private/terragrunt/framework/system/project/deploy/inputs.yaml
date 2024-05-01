@@ -27,6 +27,7 @@ activate_extra_apis:
   - "servicenetworking.googleapis.com"
   - "storage-api.googleapis.com"
   - "networkmanagement.googleapis.com"
+  - "secretmanager.googleapis.com"
 disable_dependent_services: false
 disable_services_on_destroy: false
 labels: { contact: "vtds-team", team: "vtds", role: "vtds-support" }
