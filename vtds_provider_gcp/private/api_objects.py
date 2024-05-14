@@ -35,7 +35,9 @@ from time import sleep
 
 from vtds_base import (
     ContextualError,
-    logfile
+    log_paths,
+    logfile,
+    info_msg
 )
 from ..api_objects import (
     VirtualBlades,
@@ -245,13 +247,13 @@ class PrivateBladeConnection(BladeConnection):
 
         """
         self.common = common
-        self.blade_type = blade_type
+        self.b_type = blade_type
         self.instance = instance
-        self.remote_port = remote_port
+        self.rem_port = remote_port
         self.hostname = self.common.blade_hostname(
             blade_type, instance
         )
-        self.local_ip = "127.0.0.1"
+        self.loc_ip = "127.0.0.1"
         self.loc_port = None
         self.subprocess = None
         self._connect()
@@ -261,67 +263,106 @@ class PrivateBladeConnection(BladeConnection):
         the local IP and port of the connection.
 
         """
-        # Get a "free" port to use for the connection by briefly
-        # binding a TCP server and then destroying it before it
-        # listens on anything.
-        with TCPServer((self.local_ip, 0), None) as tmp:
-            self.loc_port = tmp.server_address[1]
-
         # pylint: disable=protected-access
         zone = self.common.get_zone()
 
         # pylint: disable=protected-access
         project_id = self.common.get_project_id()
 
-        logname = "connection-%s-port-%d" % (self.hostname, self.remote_port)
-        # pylint: disable=protected-access
-        out_path, err_path = self.common.log_paths(logname)
-        with logfile(out_path) as out, logfile(err_path) as err:
-            # Not using 'with' for the Popen because the Popen object
-            # becomes part of this class instance for the duration of
-            # the class instance's life cycle. The instance itself is
-            # handed out through a context manager which will
-            # disconnect and destroy the Popen object when the context
-            # ends.
-            #
-            # pylint: disable=consider-using-with
-            self.subprocess = Popen(
-                [
+        out_path, err_path = log_paths(
+            self.common.build_dir(),
+            "connection-%s-port-%d" % (self.hostname, self.rem_port)
+        )
+        reconnects = 10
+        while reconnects > 0:
+            # Get a "free" port to use for the connection by briefly
+            # binding a TCP server and then destroying it before it
+            # listens on anything.
+            with TCPServer((self.loc_ip, 0), None) as tmp:
+                self.loc_port = tmp.server_address[1]
+
+            with logfile(out_path) as out, logfile(err_path) as err:
+                # Not using 'with' for the Popen because the Popen
+                # object becomes part of this class instance for the
+                # duration of the class instance's life cycle. The
+                # instance itself is handed out through a context
+                # manager which will disconnect and destroy the Popen
+                # object when the context ends.
+                #
+                # pylint: disable=consider-using-with
+                cmd = [
                     'gcloud', 'compute', '--project=%s' % project_id,
                     'start-iap-tunnel',
                     '--zone=%s' % zone,
+                    '--local-host-port=%s:%s' % (self.loc_ip, self.loc_port),
                     self.hostname,
-                    str(self.remote_port),
-                    '--local-host-port=%s:%s' % (self.local_ip, self.loc_port)
-                ],
-                stdout=out, stderr=err,
-                text=True, encoding='UTF-8'
-            )
+                    str(self.rem_port)
+                ]
+                self.subprocess = Popen(
+                    cmd,
+                    stdout=out, stderr=err,
+                    text=True, encoding='UTF-8'
+                )
 
-        # Wait for the tunnel to be established before returning.
-        retries = 60
-        while retries > 0:
-            with socket(AF_INET, SOCK_STREAM) as tmp:
-                try:
-                    tmp.connect((self.local_ip, self.loc_port))
-                    return
-                except ConnectionRefusedError:
-                    sleep(1)
-                    retries -= 1
-                except Exception as err:
-                    self._disconnect()
-                    raise ContextualError(
-                        "internal error: failed attempt to connect to "
-                        "service on IAP tunnel to '%s' port %d - %s" % (
-                            self.hostname, self.remote_port, str(err)
-                        ),
-                        out_path, err_path
-                    ) from err
-        # If we got out of the loop we timed out trying to connect...
-        self._disconnect()
+            # Wait for the tunnel to be established before returning.
+            retries = 60
+            while retries > 0:
+                # If the connection command fails, then break out of
+                # the loop, since there is no point trying to connect
+                # to a port that will never be there.
+                exit_status = self.subprocess.poll()
+                if exit_status is not None:
+                    info_msg(
+                        "IAP connection to '%s' on port %d "
+                        "terminated with exit status %d [%s%s]" % (
+                            self.hostname, self.rem_port, exit_status,
+                            "retrying" if reconnects > 1 else "failing",
+                            " - details in '%s'" % err_path if reconnects <= 1
+                            else ""
+                        )
+                    )
+                    break
+                with socket(AF_INET, SOCK_STREAM) as tmp:
+                    try:
+                        tmp.connect((self.loc_ip, self.loc_port))
+                        return
+                    except ConnectionRefusedError:
+                        sleep(1)
+                        retries -= 1
+                    except Exception as err:
+                        self._disconnect()
+                        raise ContextualError(
+                            "internal error: failed attempt to connect to "
+                            "service on IAP tunnel to '%s' port %d "
+                            "(local port = %s, local IP = %s) "
+                            "connect cmd was %s - %s" % (
+                                self.hostname, self.rem_port,
+                                self.loc_port, self.loc_ip,
+                                str(cmd),
+                                str(err)
+                            ),
+                            out_path, err_path
+                        ) from err
+            # If we got out of the loop either the connection command
+            # terminated or we timed out trying to connect, keep
+            # trying the connection from scratch a few times.
+            reconnects -= 1
+            self._disconnect()
+            # If we timed out, we have waited long enough to reconnect
+            # immediately. If not, give it some time to get better
+            # then reconnect.
+            if retries > 0:
+                sleep(10)
+        # The reconnect loop ended without a successful connection,
+        # report the error and bail out...
         raise ContextualError(
             "internal error: timeout waiting for IAP connection to '%s' "
-            "port %d to be ready" % (self.hostname, self.remote_port),
+            "port %d to be ready (local port = %s, local IP = %s) "
+            "- connect command was %s" % (
+                self.hostname, self.rem_port,
+                self.loc_port, self.loc_ip,
+                str(cmd)
+            ),
             out_path, err_path
         )
 
@@ -337,7 +378,7 @@ class PrivateBladeConnection(BladeConnection):
         Virtual Blade.
 
         """
-        return self.blade_type
+        return self.b_type
 
     def blade_hostname(self):
         """Return the hostname of the connected Virtual Blade.
@@ -350,7 +391,7 @@ class PrivateBladeConnection(BladeConnection):
         to the Virtual Blade.
 
         """
-        return self.local_ip
+        return self.loc_ip
 
     def local_port(self):
         """Return the TCP port number on the locally reachable IP

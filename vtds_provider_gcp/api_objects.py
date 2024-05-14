@@ -72,6 +72,26 @@ class VirtualBlades(metaclass=ABCMeta):
         """
 
     @abstractmethod
+    def blade_ssh_key_secret(self, blade_type):
+        """Return the name of the secret containing the SSH key pair
+        used to to authenticate with blades of the specified blade
+        type.
+
+        """
+
+    @abstractmethod
+    def blade_ssh_key_paths(self, blade_type):
+        """Return a tuple of paths to files containing the public and
+        private SSH keys used to to authenticate with blades of the
+        specified blade type. The tuple is in the form '(public_path,
+        private_path)' The value of 'private_path' is suitable for use
+        with the '-i' option of 'ssh'. Before returning this call will
+        verify that both files can be opened for reading and will fail
+        with a ContextualError if either cannot.
+
+        """
+
+    @abstractmethod
     @contextmanager
     def connect_blade(self, remote_port, blade_type, instance):
         """Establish an external connection to the specified remote
