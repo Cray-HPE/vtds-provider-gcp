@@ -20,15 +20,13 @@
 # OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
-"""Private layer code to compose and work with dynamically created
-Terragrunt / Terraform control structures that define the resources
-associated with classes of vTDS Virtual Blades for the purpose of
-deploying Virtual Blades implemented as GCP Compute Instances into a
-platform implemented as a GCP project.
+"""Private layer code to manage secrets and translate between API secret
+operations and GCP secret operations.
 
 """
 import re
 from subprocess import PIPE
+from json import loads
 from vtds_base import (
     ContextualError,
     log_paths,
@@ -62,6 +60,7 @@ class SecretManager:
                 "config do not define a 'name' field: %s" % str(missing_names)
             ) from err
         self.cache = {}
+        self.__load_cache()
 
     @staticmethod
     def __expand_kvs(secret_name, dict_name, dictionary):
@@ -83,6 +82,43 @@ class SecretManager:
             result += "," if result else ""
             result += "%s=%s" % (key, value)
         return result
+
+    def __load_cache(self):
+        """Pre-load the cache with all of the secrets currently in the
+        project so we have them.
+
+        """
+        # Nothing in the cache yet, load it up.
+        project_name = self.common.get_project_id()
+        if project_name is None:
+            # No project yet, nothing to load.
+            return
+        logname = "load-cache-%s" % project_name
+        project_id = "--project=%s" % project_name
+        result = run(
+            [
+                'gcloud', 'secrets', project_id, 'list', '--format=json'
+            ],
+            log_paths(self.common.build_dir(), logname),
+            stdout=PIPE
+        )
+        secret_list = loads(result.stdout)
+        self.cache = {
+            secret['name'].split('/')[-1]: self.read(
+                secret['name'].split('/')[-1]
+            )
+            for secret in secret_list
+        }
+
+    def __check_secret(self, secret):
+        """Check to see whether a secret exists in the project.
+        Return True if it does, false otherwise.
+
+        """
+        # I didn't get here if any of the secrets don't have names, so
+        # no need to protect this reference.
+        name = secret['name']
+        return name in self.cache
 
     def __create_secret(self, secret):
         """Class private: register the specified secret in the GCP
@@ -114,6 +150,8 @@ class SecretManager:
             cmd.append(annotations)
         logname = "create-secret-%s" % name
         run(cmd, log_paths(self.common.build_dir(), logname))
+        # Newly created, no value yet.
+        self.cache[name] = None
 
     def __remove_secret(self, secret):
         """Class private: register the specified secret in the GCP
@@ -129,6 +167,11 @@ class SecretManager:
             ['gcloud', 'secrets', 'delete', name, project_id, '--quiet'],
             log_paths(self.common.build_dir(), logname)
         )
+        # Take the secret out of the cache if it is there.
+        try:
+            del self.cache[name]
+        except KeyError:
+            pass
 
     def __store_secret(self, secret, data):
         """Store the specified data in a secret (actually a secret
@@ -154,7 +197,9 @@ class SecretManager:
 
     def __read_secret(self, secret):
         """Read the 'latest' version data from the specified secret
-        and return it as a 'UTF-8' encoded string.
+        and return it as a 'UTF-8' encoded string. If the project
+        doesn't exist yet, or the secret cannot be read from the
+        project, return None.
 
         """
         # I didn't get here if any of the secrets don't have names, so
@@ -162,12 +207,17 @@ class SecretManager:
         name = "--secret=%s" % secret['name']
         # Try reading the secret from the cache, if it doesn't work go
         # ahead and get it from GCP instead.
-        try:
-            return self.cache[name]
-        except KeyError:
-            # Not in the cache, keep looking...
-            pass
-        project_id = "--project=%s" % self.common.get_project_id()
+        data = self.cache.get(name, None)
+        if data is not None:
+            return data
+        # Secret either was not in the cache or had no value in the
+        # cache yet. See if it has a value now.
+        project_name = self.common.get_project_id()
+        if project_name is None:
+            # The project doesn't exist (yet) so the secret doesn't
+            # have a value.
+            return None
+        project_id = "--project=%s" % project_name
         logname = "read-secret-%s" % secret['name']
         result = run(
             [
@@ -175,8 +225,14 @@ class SecretManager:
                 project_id, name,
             ],
             log_paths(self.common.build_dir(), logname),
-            stdout=PIPE
+            stdout=PIPE,
+            check=False
         )
+        if result.returncode != 0:
+            # The command failed, assume that either the secret
+            # doesn't exist or doesn't have a value.
+            return None
+        # We got something, cache it and return it.
         self.cache[name] = result.stdout.rstrip()
         return self.cache[name]
 
@@ -190,7 +246,8 @@ class SecretManager:
 
         """
         for _, secret in self.secrets.items():
-            self.__create_secret(secret)
+            if not self.__check_secret(secret):
+                self.__create_secret(secret)
 
     def remove(self):
         """Remove all secrets declared by any layer during the
@@ -219,6 +276,6 @@ class SecretManager:
         secret = self.secrets.get(name, None)
         if secret is None:
             raise ContextualError(
-                "attempt to store value in unknown secret '%s'" % name
+                "attempt to read value from an unknown secret '%s'" % name
             )
         return self.__read_secret(secret)

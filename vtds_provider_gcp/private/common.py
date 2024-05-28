@@ -163,10 +163,12 @@ class Common:
                 '--format=value(PROJECT_ID)'
             ],
             log_paths(self.build_directory, "common-get-project-id"),
-            stdout=PIPE
+            stdout=PIPE,
+            check=False
         )
         # Reference the class variable using the class name to set it.
         Common.project_id = result.stdout.rstrip()
+        Common.project_id = Common.project_id if Common.project_id else None
         return self.project_id
 
     def get_zone(self):

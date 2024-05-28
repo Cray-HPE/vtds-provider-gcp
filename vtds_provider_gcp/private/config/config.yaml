@@ -386,7 +386,14 @@ provider:
       gpu: null
       resource_policies: []
   secrets:
-    blade_ssh_keys:
+    # All of the secrets to be used in your vTDS system are declared
+    # here, though their values and use may come from other
+    # layers. Secrets declared here will be created within the GCP
+    # Secret Manager and available for storing into or reading out of
+    # by name through the Secrets API object. Binding of secrets to
+    # other objects in the configuration is done using the name in the
+    # 'name' field of the secret.
+    blade_ssh_key:
       # The SSH public / private key pair used by the provider layer
       # to talk to Virtual Blades. The public key will be added to
       # '/root/.ssh/authorized_keys' upon deployment of virtual
@@ -396,9 +403,9 @@ provider:
       # its function. Generally not used, but here if you want it. No
       # more than 64 labels can be assigned.
       labels: {}
-      # Key value pairs, similar to labels. There will always be
-      # a 'layer' annotation indicating what layer requested creation
-      # of the secret. The total size of annotation keys and values
-      # must be less than 16KiB.
+      # Key value pairs, similar to labels. There will always be a
+      # 'layer' annotation indicating what layer provides the secret
+      # value. The total size of annotation keys and values must be
+      # less than 16KiB.
       annotations:
         layer: provider
