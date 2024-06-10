@@ -642,7 +642,8 @@ class PrivateBladeSSHConnection(BladeSSHConnection, PrivateBladeConnection):
             ) from err
 
     def copy_to(
-        self, source, destination, blocking=True, logfiles=None, **kwargs
+            self, source, destination,
+            recurse=False, blocking=True, logfiles=None, **kwargs
     ):
         """Copy a file from a path on the local machine ('source') to
         a path on the virtual blade ('dest'). The SCP operation is run
@@ -651,6 +652,10 @@ class PrivateBladeSSHConnection(BladeSSHConnection, PrivateBladeConnection):
         they may be used to override defaults set up by this function
         and passed to subprocess.Popen() or simply passed on to
         subprocess.Popen() as keyword arguments.
+
+        If the 'recurse' option is True and the local file is a
+        directory, the directory and all of its descendants will be
+        copied.
 
         If the 'logfiles' argument is provided, it contains a two
         element tuple telling run_command where to put standard output
@@ -670,8 +675,9 @@ class PrivateBladeSSHConnection(BladeSSHConnection, PrivateBladeConnection):
 
         """
         logfiles = logfiles if logfiles is not None else (None, None)
+        recurse_option = ['--recurse'] if recurse else []
         cmd = [
-            'scp', '-i', self.private_key_path, *self.options,
+            'scp', '-i', self.private_key_path, *recurse_option, *self.options,
             source,
             'root@%s:%s' % (self.loc_ip, destination)
         ]
@@ -691,7 +697,8 @@ class PrivateBladeSSHConnection(BladeSSHConnection, PrivateBladeConnection):
             ) from err
 
     def copy_from(
-        self, source, destination, blocking=True, logfiles=None, **kwargs
+        self, source, destination,
+            recurse=False, blocking=True, logfiles=None, **kwargs
     ):
         """Copy a file from a path on the blade ('source') to a path
         on the local machine ('dest'). The SCP operation is run under
@@ -700,6 +707,10 @@ class PrivateBladeSSHConnection(BladeSSHConnection, PrivateBladeConnection):
         may be used to override defaults set up by this function and
         passed to subprocess.Popen() or simply passed on to
         subprocess.Popen() as keyword arguments.
+
+        If the 'recurse' option is True and the remote file is a
+        directory, the directory and all of its descendants will be
+        copied.
 
         If the 'logfiles' argument is provided, it contains a two
         element tuple telling run_command where to put standard output
@@ -719,8 +730,9 @@ class PrivateBladeSSHConnection(BladeSSHConnection, PrivateBladeConnection):
 
         """
         logfiles = logfiles if logfiles is not None else (None, None)
+        recurse_option = ['--recurse'] if recurse else []
         cmd = [
-            'scp', '-i', self.private_key_path, *self.options,
+            'scp', '-i', self.private_key_path, *recurse_option, *self.options,
             'root@%s:%s' % (self.loc_ip, destination),
             source
         ]

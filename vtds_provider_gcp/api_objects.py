@@ -238,7 +238,7 @@ class BladeSSHConnection(BladeConnection, metaclass=ABCMeta):
     @abstractmethod
     def copy_to(
         self, source, destination,
-        blocking=True, logfiles=None, **kwargs
+        recurse=False, blocking=True, logfiles=None, **kwargs
     ):
         """Copy a file from a path on the local machine ('source') to
         a path on the virtual blade ('dest'). The SCP operation is run
@@ -267,7 +267,8 @@ class BladeSSHConnection(BladeConnection, metaclass=ABCMeta):
 
     @abstractmethod
     def copy_from(
-            self, source, destination, blocking=True, logfiles=None, **kwargs
+        self, source, destination,
+        recurse=False, blocking=True, logfiles=None, **kwargs
     ):
         """Copy a file from a path on the blade ('source') to a path
         on the local machine ('dest'). The SCP operation is run under
