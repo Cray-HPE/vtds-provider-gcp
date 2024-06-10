@@ -23,6 +23,7 @@
 """Private layer implementation module for the GCP provider.
 
 """
+import os
 from os.path import dirname
 from os import makedirs
 from shutil import rmtree
@@ -78,7 +79,7 @@ class PrivateProvider:
         holds the keys.
 
         """
-        pub_key, priv_key = self.common.ssh_key_paths(secret_name, True)
+        pub_key, priv_key = self.common.ssh_key_paths(secret_name)
         # Read back the keys into a dictionary to return to the caller
         with open(priv_key, 'r', encoding='UTF-8') as private, \
              open(pub_key, 'r', encoding='UTF-8') as public:
@@ -105,6 +106,32 @@ class PrivateProvider:
         )
         return self.__read_key_secrets(secret_name)
 
+    def __cache_ssh_keys(self, secret_data, secret_name):
+        """Store the SSH keys found in 'secret_data' in the build
+        tree for use by commands that need SSH connections.
+
+        """
+        pub_key, priv_key = self.common.ssh_key_paths(secret_name, True)
+        ssh_dir = dirname(priv_key)
+        rmtree(ssh_dir, ignore_errors=True)
+        makedirs(ssh_dir, mode=0o700, exist_ok=True)
+        keys = safe_load(secret_data)
+
+        # Make sure that the file is created with owner only 'rw'
+        # permissions.
+        def open_safe(path, flags):
+            return os.open(path, flags, 0o600)
+
+        with open(
+            pub_key, mode='w', opener=open_safe, encoding='UTF-8'
+        ) as pub_key_file:
+            pub_key_file.write(keys['public'])
+        with open(
+                priv_key, mode='w', opener=open_safe, encoding='UTF-8'
+        ) as priv_key_file:
+            priv_key_file.write(keys['private'])
+        return keys
+
     def __add_ssh_key(self, blade_type, blade_config):
         """Add the SSH public key from the blade's ssh_key_secret to
         the blade metadata so that when the blade is deployed it will
@@ -120,7 +147,7 @@ class PrivateProvider:
             )
         secret_data = self.secret_manager.read(secret_name)
         keys = (
-            safe_load(secret_data)
+            self.__cache_ssh_keys(secret_data, secret_name)
             if secret_data is not None
             else self.__generate_blade_ssh_keys(secret_name)
         )

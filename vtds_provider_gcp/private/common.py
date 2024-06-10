@@ -262,9 +262,6 @@ class Common:
 
         """
         blade = self.__get_blade(blade_type)
-        # The GCP provider only lets us have one interconnect per
-        # blade type, so we are just going to go grab that and make it
-        # into a 'list' of one item.
         secret_name = blade.get('ssh_key_secret', None)
         if secret_name is None:
             raise ContextualError(
@@ -291,10 +288,12 @@ class Common:
         public_path = path_join(ssh_dir, "id_rsa.pub")
         if not ignore_missing:
             try:
-                # pylint: disable=consider-using-with
-                open(public_path, 'r', encoding='UTF-8').close()
-                # pylint: disable=consider-using-with
-                open(private_path, 'r', encoding='UTF-8').close()
+                # Verify that we can open both paths. No need to do
+                # anything with them.
+                with open(public_path, 'r', encoding='UTF-8') as _:
+                    pass
+                with open(private_path, 'r', encoding='UTF-8') as _:
+                    pass
             except OSError as err:
                 raise ContextualError(
                     "failed to open SSH key file for reading "
