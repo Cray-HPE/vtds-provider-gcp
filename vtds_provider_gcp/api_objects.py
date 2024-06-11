@@ -238,7 +238,7 @@ class BladeSSHConnection(BladeConnection, metaclass=ABCMeta):
     @abstractmethod
     def copy_to(
         self, source, destination,
-        recurse=False, blocking=True, logfiles=None, **kwargs
+        recurse=False, blocking=True, logname=None, **kwargs
     ):
         """Copy a file from a path on the local machine ('source') to
         a path on the virtual blade ('dest'). The SCP operation is run
@@ -248,27 +248,28 @@ class BladeSSHConnection(BladeConnection, metaclass=ABCMeta):
         and passed to subprocess.Popen() or simply passed on to
         subprocess.Popen() as keyword arguments.
 
-        If the 'logfiles' argument is provided, it contains a two
-        element tuple telling run_command where to put standard output
-        and standard error logging for the copy respectively.
-        Normally, these are specified as pathnames to log
-        files. Either or both can also be a file object or None. If a
-        file object is used, the output is written to the file. If
-        None is used, the corresponding output is not redirected and
-        the default Popen() behavior is used.
+        If the 'recurse' argument is 'True' and the source is a
+        directory, the directory and all of its descendents will be
+        copied. Otherwise, the source should be a file and it alone
+        will be copied.
 
-        If the 'async' option is False (default), copy_to() will block
+        If the 'blocking' option is True (default), copy_to() will block
         waiting for the copy to complete (or fail) and raise a
-        ContextualError exception if it fails. If the 'async' option
-        is True, copy_to() will return immediately once the Popen()
+        ContextualError exception if it fails. If the 'blocking' option
+        is False, copy_to() will return immediately once the Popen()
         object is created and let the caller manage the sub-process.
+
+        If the 'logname' argument is provided and not None, use the
+        string found there to compose a pair of log files to capture
+        standard output and standard error. Otherwise a generic log
+        name is created.
 
         """
 
     @abstractmethod
     def copy_from(
         self, source, destination,
-        recurse=False, blocking=True, logfiles=None, **kwargs
+        recurse=False, blocking=True, logname=None, **kwargs
     ):
         """Copy a file from a path on the blade ('source') to a path
         on the local machine ('dest'). The SCP operation is run under
@@ -278,24 +279,21 @@ class BladeSSHConnection(BladeConnection, metaclass=ABCMeta):
         passed to subprocess.Popen() or simply passed on to
         subprocess.Popen() as keyword arguments.
 
-        If the 'recurse' option is True and the local file is a
-        directory, the directory and all of its descendants will be
-        copied.
-
-        If the 'logfiles' argument is provided, it contains a two
-        element tuple telling run_command where to put standard output
-        and standard error logging for the copy respectively.
-        Normally, these are specified as pathnames to log
-        files. Either or both can also be a file object or None. If a
-        file object is used, the output is written to the file. If
-        None is used, the corresponding output is not redirected and
-        the default Popen() behavior is used.
+        If the 'recurse' argument is 'True' and the source is a
+        directory, the directory and all of its descendents will be
+        copied. Otherwise, the source should be a file and it alone
+        will be copied.
 
         If the 'blocking' option is True (default), copy_from() will
         block waiting for the copy to complete (or fail) and raise a
         ContextualError exception if it fails. If the 'blocking' option
         is False, copy_from() will return immediately once the Popen()
         object is created and let the caller manage the sub-process.
+
+        If the 'logname' argument is provided and not None, use the
+        string found there to compose a pair of log files to capture
+        standard output and standard error. Otherwise a generic log
+        name is created.
 
         """
 

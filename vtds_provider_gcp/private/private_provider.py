@@ -125,7 +125,7 @@ class PrivateProvider:
         with open(
             pub_key, mode='w', opener=open_safe, encoding='UTF-8'
         ) as pub_key_file:
-            pub_key_file.write(keys['public'])
+            pub_key_file.write("%s\n" % keys['public'])
         with open(
                 priv_key, mode='w', opener=open_safe, encoding='UTF-8'
         ) as priv_key_file:
