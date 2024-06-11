@@ -643,7 +643,7 @@ class PrivateBladeSSHConnection(BladeSSHConnection, PrivateBladeConnection):
 
     def copy_to(
             self, source, destination,
-            recurse=False, blocking=True, logfiles=None, **kwargs
+            recurse=False, blocking=True, logname=None, **kwargs
     ):
         """Copy a file from a path on the local machine ('source') to
         a path on the virtual blade ('dest'). The SCP operation is run
@@ -653,18 +653,10 @@ class PrivateBladeSSHConnection(BladeSSHConnection, PrivateBladeConnection):
         and passed to subprocess.Popen() or simply passed on to
         subprocess.Popen() as keyword arguments.
 
-        If the 'recurse' option is True and the local file is a
-        directory, the directory and all of its descendants will be
-        copied.
-
-        If the 'logfiles' argument is provided, it contains a two
-        element tuple telling run_command where to put standard output
-        and standard error logging for the copy respectively.
-        Normally, these are specified as pathnames to log
-        files. Either or both can also be a file object or None. If a
-        file object is used, the output is written to the file. If
-        None is used, the corresponding output is not redirected and
-        the default Popen() behavior is used.
+        If the 'recurse' argument is 'True' and the source is a
+        directory, the directory and all of its descendents will be
+        copied. Otherwise, the source should be a file and it alone
+        will be copied.
 
         If the 'blocking' option is True (default), copy_to() will
         block waiting for the copy to complete (or fail) and raise a
@@ -673,8 +665,20 @@ class PrivateBladeSSHConnection(BladeSSHConnection, PrivateBladeConnection):
         Popen() object is created and let the caller manage the
         sub-process.
 
+        If the 'logname' argument is provided and not None, use the
+        string found there to compose a pair of log files to capture
+        standard output and standard error. Otherwise a generic log
+        name is created.
+
         """
-        logfiles = logfiles if logfiles is not None else (None, None)
+        logname = (
+            logname if logname is not None else
+            "copy-to-%s-%s" % (source, destination)
+        )
+        logfiles = log_paths(
+            self.common.build_dir(),
+            "%s-%s" % (logname, self.blade_hostname())
+        )
         recurse_option = ['-r'] if recurse else []
         cmd = [
             'scp', '-i', self.private_key_path, *recurse_option, *self.options,
@@ -698,7 +702,7 @@ class PrivateBladeSSHConnection(BladeSSHConnection, PrivateBladeConnection):
 
     def copy_from(
         self, source, destination,
-            recurse=False, blocking=True, logfiles=None, **kwargs
+            recurse=False, blocking=True, logname=None, **kwargs
     ):
         """Copy a file from a path on the blade ('source') to a path
         on the local machine ('dest'). The SCP operation is run under
@@ -708,18 +712,10 @@ class PrivateBladeSSHConnection(BladeSSHConnection, PrivateBladeConnection):
         passed to subprocess.Popen() or simply passed on to
         subprocess.Popen() as keyword arguments.
 
-        If the 'recurse' option is True and the remote file is a
-        directory, the directory and all of its descendants will be
-        copied.
-
-        If the 'logfiles' argument is provided, it contains a two
-        element tuple telling run_command where to put standard output
-        and standard error logging for the copy respectively.
-        Normally, these are specified as pathnames to log
-        files. Either or both can also be a file object or None. If a
-        file object is used, the output is written to the file. If
-        None is used, the corresponding output is not redirected and
-        the default Popen() behavior is used.
+        If the 'recurse' argument is 'True' and the source is a
+        directory, the directory and all of its descendents will be
+        copied. Otherwise, the source should be a file and it alone
+        will be copied.
 
         If the 'blocking' option is True (default), copy_from() will
         block waiting for the copy to complete (or fail) and raise a
@@ -728,8 +724,20 @@ class PrivateBladeSSHConnection(BladeSSHConnection, PrivateBladeConnection):
         Popen() object is created and let the caller manage the
         sub-process.
 
+        If the 'logname' argument is provided and not None, use the
+        string found there to compose a pair of log files to capture
+        standard output and standard error. Otherwise a generic log
+        name is created.
+
         """
-        logfiles = logfiles if logfiles is not None else (None, None)
+        logname = (
+            logname if logname is not None else
+            "copy-from-%s-%s" % (source, destination)
+        )
+        logfiles = log_paths(
+            self.common.build_dir(),
+            "%s-%s" % (logname, self.blade_hostname())
+        )
         recurse_option = ['-r'] if recurse else []
         cmd = [
             'scp', '-i', self.private_key_path, *recurse_option, *self.options,
@@ -856,11 +864,8 @@ class PrivateBladeSSHConnectionSet(
         wait_args_list = [
             (
                 blade_connection.copy_to(
-                    source, destination, recurse, False,
-                    log_paths(
-                        self.common.build_dir(),
-                        "%s-%s" % (logname, blade_connection.blade_hostname())
-                    )
+                    source, destination, recurse=recurse, blocking=False,
+                    logname=logname
                 ),
                 "scp %s to root@%s:%s" % (
                     source,
