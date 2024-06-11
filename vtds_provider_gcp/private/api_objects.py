@@ -675,7 +675,7 @@ class PrivateBladeSSHConnection(BladeSSHConnection, PrivateBladeConnection):
 
         """
         logfiles = logfiles if logfiles is not None else (None, None)
-        recurse_option = ['--recurse'] if recurse else []
+        recurse_option = ['-r'] if recurse else []
         cmd = [
             'scp', '-i', self.private_key_path, *recurse_option, *self.options,
             source,
@@ -730,7 +730,7 @@ class PrivateBladeSSHConnection(BladeSSHConnection, PrivateBladeConnection):
 
         """
         logfiles = logfiles if logfiles is not None else (None, None)
-        recurse_option = ['--recurse'] if recurse else []
+        recurse_option = ['-r'] if recurse else []
         cmd = [
             'scp', '-i', self.private_key_path, *recurse_option, *self.options,
             'root@%s:%s' % (self.loc_ip, destination),
@@ -821,7 +821,10 @@ class PrivateBladeSSHConnectionSet(
         """
         PrivateBladeConnectionSet.__init__(self, common, connections)
 
-    def copy_to(self, source, destination, logname=None, blade_type=None):
+    def copy_to(
+        self, source, destination,
+        recurse=False, logname=None, blade_type=None
+    ):
         """Copy the file at a path on the local machine ('source') to
         a path ('dest') on all of the selected blades (based on
         'blade_type'). If 'blade_type is not specified or None, copy
@@ -829,6 +832,10 @@ class PrivateBladeSSHConnectionSet(
         complete or fail. If any of the copies fail, collect the
         errors they produce to raise a ContextualError exception
         describing the failures.
+
+        If the 'recurse' option is True and the local file is a
+        directory, the directory and all of its descendants will be
+        copied.
 
         If the 'logname' argument is provided, use the string found
         there to compose the 'logfiles' argument to be passed to each
@@ -849,7 +856,7 @@ class PrivateBladeSSHConnectionSet(
         wait_args_list = [
             (
                 blade_connection.copy_to(
-                    source, destination, False,
+                    source, destination, recurse, False,
                     log_paths(
                         self.common.build_dir(),
                         "%s-%s" % (logname, blade_connection.blade_hostname())

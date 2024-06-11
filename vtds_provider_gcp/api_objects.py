@@ -278,6 +278,10 @@ class BladeSSHConnection(BladeConnection, metaclass=ABCMeta):
         passed to subprocess.Popen() or simply passed on to
         subprocess.Popen() as keyword arguments.
 
+        If the 'recurse' option is True and the local file is a
+        directory, the directory and all of its descendants will be
+        copied.
+
         If the 'logfiles' argument is provided, it contains a two
         element tuple telling run_command where to put standard output
         and standard error logging for the copy respectively.
@@ -340,7 +344,9 @@ class BladeSSHConnectionSet(BladeConnectionSet, metaclass=ABCMeta):
 
     """
     @abstractmethod
-    def copy_to(self, source, destination, logname=None, blade_type=None):
+    def copy_to(
+        self, source, destination, recurse=False, logname=None, blade_type=None
+    ):
         """Copy the file at a path on the local machine ('source') to
         a path ('dest') on all of the selected blades (based on
         'blade_type'). If 'blade_type is not specified or None, copy
@@ -348,6 +354,10 @@ class BladeSSHConnectionSet(BladeConnectionSet, metaclass=ABCMeta):
         complete or fail. If any of the copies fail, collect the
         errors they produce to raise a ContextualError exception
         describing the failures.
+
+        If the 'recurse' option is True and the local file is a
+        directory, the directory and all of its descendants will be
+        copied.
 
         If the 'logname' argument is provided, use the string found
         there to compose paths to two files, one that will contain the

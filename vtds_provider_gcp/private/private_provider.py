@@ -129,7 +129,7 @@ class PrivateProvider:
         with open(
                 priv_key, mode='w', opener=open_safe, encoding='UTF-8'
         ) as priv_key_file:
-            priv_key_file.write(keys['private'])
+            priv_key_file.write("%s\n" % keys['private'])
         return keys
 
     def __add_ssh_key(self, blade_type, blade_config):
