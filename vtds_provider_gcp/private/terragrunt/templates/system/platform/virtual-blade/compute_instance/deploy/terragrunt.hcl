@@ -70,7 +70,9 @@ inputs = {
   network              = ""
   subnetwork           = format("{{ interconnect_name }}-%s", local.vtds_vars.provider.project.region)
   subnetwork_project   = dependency.service_project.outputs.project_id
+  {% if access_config %}
   access_config        = local.vtds_vars.{{ config_path }}.access_config
+  {% endif %}
   add_hostname_suffix  = local.vtds_vars.{{ config_path }}.add_hostname_suffix
   hostname_suffix_separator = local.vtds_vars.{{ config_path }}.hostname_suffix_separator
   hostname             = local.vtds_vars.{{ config_path }}.hostname
