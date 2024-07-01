@@ -206,7 +206,7 @@ class PrivateVirtualBlades(VirtualBlades):
             connection._disconnect()  # pylint: disable=protected-access
 
     @contextmanager
-    def ssh_connect_blades(self, remote_port=22, blade_types=None):
+    def ssh_connect_blades(self, blade_types=None, remote_port=22):
         """Establish external connections to the SSH server on all the
         Virtual Blade instances on all the Virtual Blade types listed
         by name in 'blade_types'. If 'blade_types' is not provided or
