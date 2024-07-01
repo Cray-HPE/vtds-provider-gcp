@@ -68,6 +68,7 @@ class VirtualBlade:
         try:
             interconnect = blade_config['blade_interconnect']
             boot_disk = blade_config.get('vm', {})['boot_disk']
+            access_config = blade_config.get('access_config', [])
         except KeyError as err:
             raise ContextualError(
                 "missing config in the Virtual Blade class '%s': %s" % (
@@ -79,7 +80,8 @@ class VirtualBlade:
                 'blade_class': key,
                 'interconnect_name': interconnect['subnetwork'],
                 'config_path': "provider.virtual_blades.%s" % key,
-                'source_image_private': boot_disk['source_image_private']
+                'source_image_private': boot_disk['source_image_private'],
+                'access_config': access_config,
             }
         except KeyError as err:
             raise ContextualError(
