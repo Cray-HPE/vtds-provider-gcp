@@ -23,7 +23,6 @@
 """Private implementations of API objects.
 
 """
-from contextlib import contextmanager
 from subprocess import (
     Popen,
     TimeoutExpired
@@ -133,36 +132,38 @@ class PrivateVirtualBlades(VirtualBlades):
         secret_name = self.common.blade_ssh_key_secret(blade_type)
         return self.common.ssh_key_paths(secret_name)
 
-    @contextmanager
     def connect_blade(self, blade_type, instance, remote_port):
         """Establish an external connection to the specified remote
         port on the specified instance of the named Virtual Blade
-        type. Return a context manager (suitable for use in a 'with'
-        clause) yielding a BladeConnection object for the
-        connection. Upon leaving the 'with' context, the connection in
-        the BladeConnection is closed.
+        type. Return a BladeConnection object containing the
+        connection.
+
+        BladeConnection objects are context manager enabled (suitable
+        for use in a 'with' clause). Upon leaving the 'with' context,
+        the connection in the BladeConnection is closed. If called
+        outside a 'with' context, the returned object must be managed
+        by the caller, which can be done by calling the
+        __exit__() method when the object is no longer needed.
 
         """
-        connection = PrivateBladeConnection(
+        return PrivateBladeConnection(
             self.common, blade_type, instance, remote_port
         )
-        try:
-            yield connection
-        finally:
-            # This is a layer private operation not really class
-            # private. Treat this reference as friendly.
-            connection._disconnect()  # pylint: disable=protected-access
 
-    @contextmanager
     def connect_blades(self, remote_port, blade_types=None):
         """Establish external connections to the specified remote port
         on all the Virtual Blade instances on all the Virtual Blade
         types listed by name in 'blade_types'. If 'blade_types' is not
-        provided or None, all available blade types are used. Return a
-        context manager (suitable for use in a 'with' clause) yielding
-        the list of BladeConnection objects representing the
-        connections. Upon leaving the 'with' context, all the
-        connections in the resulting list are closed.
+        provided or None, all available blade types are used.  Return
+        a BladeConnectionSet object containing a list of
+        BladeConnection objects representing the connections.
+
+        BladeConnectionSet objects are context manager enabled
+        (suitable for use in a 'with' clause). Upon leaving the 'with'
+        context, the connection in the BladeConnectionSet is cleaned
+        up. If called outside a 'with' context, the returned object
+        must be managed by the caller, which can be done by calling
+        the __exit__() method when the object is no longer needed..
 
         """
         blade_types = (
@@ -175,46 +176,40 @@ class PrivateVirtualBlades(VirtualBlades):
             for blade_type in blade_types
             for instance in range(0, self.blade_count(blade_type))
         ]
-        try:
-            yield PrivateBladeConnectionSet(self.common, connections)
-        finally:
-            for connection in connections:
-                # This is a layer private operation not really class
-                # private. Treat this reference as friendly.
-                connection._disconnect()  # pylint: disable=protected-access
+        return PrivateBladeConnectionSet(self.common, connections)
 
-    @contextmanager
     def ssh_connect_blade(self, blade_type, instance, remote_port=22):
         """Establish an external connection to the SSH server on the
         specified instance of the named Virtual Blade type. Return a
-        context manager (suitable for use in a 'with' clause) yielding
-        a BladeSSHConnection object for the connection. Upon leaving the
-        'with' context, the connection in the BladeSSHConnection is
-        closed.
+        a BladeSSHConnection object for the connection.
 
+        BladeSSHConnection objects are context manager enabled
+        (suitable for use in a 'with' clause). Upon leaving the 'with'
+        context, the connection in the BladeSSHConnection is cleaned
+        up. If called outside a 'with' context, the returned object
+        must be managed by the caller, which can be done by calling
+        the __exit__() method when the object is no longer needed..
         """
-        connection = PrivateBladeSSHConnection(
+        return PrivateBladeSSHConnection(
             self.common, blade_type, instance,
             self.blade_ssh_key_paths(blade_type)[1],
             remote_port
         )
-        try:
-            yield connection
-        finally:
-            # This is a layer private operation not really class
-            # private. Treat this reference as friendly.
-            connection._disconnect()  # pylint: disable=protected-access
 
-    @contextmanager
     def ssh_connect_blades(self, blade_types=None, remote_port=22):
         """Establish external connections to the SSH server on all the
         Virtual Blade instances on all the Virtual Blade types listed
         by name in 'blade_types'. If 'blade_types' is not provided or
-        None, all available blade types are used. Return a context
-        manager (suitable for use in a 'with' clause) yielding a
+        None, all available blade types are used. Return a
         BladeSSHConnectionSet object representing the
-        connections. Upon leaving the 'with' context, all the
-        connections create are closed.
+        connections.
+
+        BladeSSHConnectionSet objects are context manager enabled
+        (suitable for use in a 'with' clause). Upon leaving the 'with'
+        context, the connection in the BladeSSHConnectionSet is cleaned
+        up. If called outside a 'with' context, the returned object
+        must be managed by the caller, which can be done by calling
+        the __exit__() method when the object is no longer needed..
 
         """
         blade_types = (
@@ -229,13 +224,7 @@ class PrivateVirtualBlades(VirtualBlades):
             for blade_type in blade_types
             for instance in range(0, self.blade_count(blade_type))
         ]
-        try:
-            yield PrivateBladeSSHConnectionSet(self.common, connections)
-        finally:
-            for connection in connections:
-                # This is a layer private operation not really class
-                # private. Treat this reference as friendly.
-                connection._disconnect()  # pylint: disable=protected-access
+        return PrivateBladeSSHConnectionSet(self.common, connections)
 
 
 class PrivateBladeInterconnects(BladeInterconnects):
@@ -393,7 +382,7 @@ class PrivateBladeConnection(BladeConnection):
                         sleep(1)
                         retries -= 1
                     except Exception as err:
-                        self._disconnect()
+                        self.__exit__(type(err), err, err.__traceback__)
                         raise ContextualError(
                             "internal error: failed attempt to connect to "
                             "service on IAP tunnel to '%s' port %d "
@@ -410,7 +399,7 @@ class PrivateBladeConnection(BladeConnection):
             # terminated or we timed out trying to connect, keep
             # trying the connection from scratch a few times.
             reconnects -= 1
-            self._disconnect()
+            self.__exit__()
             # If we timed out, we have waited long enough to reconnect
             # immediately. If not, give it some time to get better
             # then reconnect.
@@ -429,9 +418,15 @@ class PrivateBladeConnection(BladeConnection):
             out_path, err_path
         )
 
-    def _disconnect(self):
-        """Layer private operation: drop the connection.
-        """
+    def __enter__(self):
+        return self
+
+    def __exit__(
+            self,
+            exception_type=None,
+            exception_value=None,
+            traceback=None
+    ):
         self.subprocess.kill()
         self.subprocess = None
         self.loc_port = None
@@ -485,6 +480,18 @@ class PrivateBladeConnectionSet(BladeConnectionSet):
         """
         self.common = common
         self.blade_connections = blade_connections
+
+    def __enter__(self):
+        return self
+
+    def __exit__(
+            self,
+            exception_type=None,
+            exception_value=None,
+            traceback=None
+    ):
+        for connection in self.blade_connections:
+            connection.__exit__(exception_type, exception_value, traceback)
 
     def list_connections(self, blade_type=None):
         """List the connections in the BladeConnectionSet filtered by
@@ -591,6 +598,19 @@ class PrivateBladeSSHConnection(BladeSSHConnection, PrivateBladeConnection):
         self.options = kwargs.get('options', default_opts)
         self.options += port_opt
         self.private_key_path = private_key_path
+
+    def __enter__(self):
+        return self
+
+    def __exit__(
+            self,
+            exception_type=None,
+            exception_value=None,
+            traceback=None
+    ):
+        PrivateBladeConnection.__exit__(
+            self, exception_type, exception_value, traceback
+        )
 
     def __run(
         self, cmd, blocking=True, out_path=None, err_path=None,  **kwargs
@@ -828,6 +848,19 @@ class PrivateBladeSSHConnectionSet(
         """Constructor
         """
         PrivateBladeConnectionSet.__init__(self, common, connections)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(
+            self,
+            exception_type=None,
+            exception_value=None,
+            traceback=None
+    ):
+        PrivateBladeConnectionSet.__exit__(
+            self, exception_type, exception_value, traceback
+        )
 
     def copy_to(
         self, source, destination,
