@@ -24,7 +24,6 @@
 and operations in the provider layer.
 
 """
-from contextlib import contextmanager
 from abc import (
     ABCMeta,
     abstractmethod
@@ -92,54 +91,68 @@ class VirtualBlades(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    @contextmanager
     def connect_blade(self, blade_type, instance, remote_port):
         """Establish an external connection to the specified remote
         port on the specified instance of the named Virtual Blade
-        type. Return a context manager (suitable for use in a 'with'
-        clause) yielding an APIBladeConnection object for the
-        connection. Upon leaving the 'with' context, the connection in
-        the APIBladeConnection is closed.
+        type. Return a BladeConnection object for the connection.
+
+        BladeConnections are context managed, so if this is used
+        in a 'with' clause, upon leaving the 'with' context, the
+        connection in the BladeConnection is automatically closed.
+
+        To close the connection outside of a 'with' clause call
+        the __exit__() method on the BladeConnection.
 
         """
 
-    @contextmanager
     @abstractmethod
     def connect_blades(self, remote_port, blade_types=None):
         """Establish external connections to the specified remote port
         on all the Virtual Blade instances on all the Virtual Blade
         types listed by name in 'blade_types'. If 'blade_types' is not
         provided or None, all available blade types are used. Return a
-        context manager (suitable for use in a 'with' clause) yielding
-        the list of APIBladeConnection objects representing the
-        connections. Upon leaving the 'with' context, all the
-        connections in the resulting list are closed.
+        BladeConnectionSet object representing the connections.
+
+        BladeConnectionSets are context managed, so if this is used
+        in a 'with' clause, upon leaving the 'with' context, the
+        connections in the BladeConnectionSet are automatically closed.
+
+        To close the connections outside of a 'with' clause call
+        the __exit__() method on the BladeConnectionSet.
 
         """
 
     @abstractmethod
-    @contextmanager
     def ssh_connect_blade(self, blade_type, instance, remote_port):
         """Establish an external connection to the SSH server
         port on the specified instance of the named Virtual Blade
-        type. Return a context manager (suitable for use in a 'with'
-        clause) yielding a BladeSSHConnection object for the
-        connection. Upon leaving the 'with' context, the connection in
-        the BladeSSHConnection is closed.
+        type. Return a BladeSSHConnection object for the
+        connection.
+
+        BladeSSHConnection are context managed, so if this is used
+        in a 'with' clause, upon leaving the 'with' context, the
+        connection in the BladeSSHConnection is automatically closed.
+
+        To close the connection outside of a 'with' clause call
+        the __exit__() method on the BladeSSHConnection.
 
         """
 
-    @contextmanager
     @abstractmethod
     def ssh_connect_blades(self, blade_types=None, remote_port=22):
         """Establish external connections to the specified remote port
         on all the Virtual Blade instances on all the Virtual Blade
         types listed by name in 'blade_types'. If 'blade_types' is not
         provided or None, all available blade types are used. Return a
-        context manager (suitable for use in a 'with' clause) yielding
-        the list of APIBladeConnection objects representing the
-        connections. Upon leaving the 'with' context, all the
-        connections in the resulting list are closed.
+        BladeSSHConnectionSet object representing the
+        connections.
+
+        BladeSSHConnectionSets are context managed, so if this is used
+        in a 'with' clause, upon leaving the 'with' context, the
+        connections in the BladeSSHConnectionSet are automatically closed.
+
+        To close the connections outside of a 'with' clause call
+        the __exit__() method on the BladeSSHConnectionSet.
 
         """
 
@@ -202,6 +215,29 @@ class BladeConnection(metaclass=ABCMeta):
 
         """
 
+    @abstractmethod
+    def __enter__(self):
+        """Context entry handler to make BladeConnection objects
+        usable with the 'with ... as' construct. This returns the
+        BladeConnection for use in a context.
+
+        """
+
+    @abstractmethod
+    def __exit__(
+            self,
+            exception_type=None,
+            exception_value=None,
+            traceback=None
+    ):
+        """Context exit handler to make BladeConnection
+        objects usable with the 'with ... as' construct. This cleans
+        up all resources associated with the BladeConnection on
+        exit from the 'with' block context. Not called if the object
+        is used outside a 'with' context.
+
+        """
+
 
 class BladeConnectionSet(metaclass=ABCMeta):
     """A class that contains multiple active BladeConnections to
@@ -224,6 +260,29 @@ class BladeConnectionSet(metaclass=ABCMeta):
         """Return the connection corresponding to the specified
         VirtualBlade hostname ('hostname') or None if the hostname is
         not found.
+
+        """
+
+    @abstractmethod
+    def __enter__(self):
+        """Context entry handler to make BladeConnectionSet objects
+        usable with the 'with ... as' construct. This returns the
+        BladeConnectionSet for use in a context.
+
+        """
+
+    @abstractmethod
+    def __exit__(
+            self,
+            exception_type=None,
+            exception_value=None,
+            traceback=None
+    ):
+        """Context exit handler to make BladeConnectionSet
+        objects usable with the 'with ... as' construct. This cleans
+        up all resources associated with the BladeConnectionSet on
+        exit from the 'with' block context. Not called if the object
+        is used outside a 'with' context.
 
         """
 
@@ -335,6 +394,29 @@ class BladeSSHConnection(BladeConnection, metaclass=ABCMeta):
 
         """
 
+    @abstractmethod
+    def __enter__(self):
+        """Context entry handler to make BladeSSHConnection objects
+        usable with the 'with ... as' construct. This returns the
+        BladeSSHConnection for use in a context.
+
+        """
+
+    @abstractmethod
+    def __exit__(
+            self,
+            exception_type=None,
+            exception_value=None,
+            traceback=None
+    ):
+        """Context exit handler to make BladeSSHConnection objects
+        usable with the 'with ... as' construct. This cleans up all
+        resources associated with the BladeSSHConnection on exit from
+        the 'with' block context. Not called if the object is used
+        outside a 'with' context.
+
+        """
+
 
 class BladeSSHConnectionSet(BladeConnectionSet, metaclass=ABCMeta):
     """A class to wrap multiple BladeSSHConnections and provide
@@ -393,6 +475,29 @@ class BladeSSHConnectionSet(BladeConnectionSet, metaclass=ABCMeta):
         standard output from the command and one that will contain the
         standard input. The paths to these files will be included in
         any error reporting from the operation.
+
+        """
+
+    @abstractmethod
+    def __enter__(self):
+        """Context entry handler to make BladeSSHConnectionSet objects
+        usable with the 'with ... as' construct. This returns the
+        BladeSSHConnectionSet for use in a context.
+
+        """
+
+    @abstractmethod
+    def __exit__(
+            self,
+            exception_type=None,
+            exception_value=None,
+            traceback=None
+    ):
+        """Context exit handler to make BladeSSHConnectionSet objects
+        usable with the 'with ... as' construct. This cleans up all
+        resources associated with the BladeSSHConnectionSet on exit
+        from the 'with' block context. Not called if the object is
+        used outside a 'with' context.
 
         """
 
