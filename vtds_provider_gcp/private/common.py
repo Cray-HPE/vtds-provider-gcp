@@ -56,47 +56,47 @@ class Common:
         self.config = config
         self.build_directory = build_dir
 
-    def __get_blade(self, blade_type):
-        """class private: retrieve the blade type deascription for the
-        named type.
+    def __get_blade(self, blade_class):
+        """class private: retrieve the blade class deascription for the
+        named class.
 
         """
         virtual_blades = (
             self.config.get('virtual_blades', {})
         )
-        blade = virtual_blades.get(blade_type, None)
+        blade = virtual_blades.get(blade_class, None)
         if blade is None:
             raise ContextualError(
-                "cannot find the virtual blade type '%s'" % blade_type
+                "cannot find the virtual blade class '%s'" % blade_class
             )
         if blade.get('pure_base_class', False):
             raise ContextualError(
-                "blade type '%s' is a pure pure base class" % blade_type
+                "blade class '%s' is a pure pure base class" % blade_class
             )
         return blade
 
-    def __get_blade_interconnect(self, blade_type, interconnect):
+    def __get_blade_interconnect(self, blade_class, interconnect):
         """class private: Get the named interconnect information from
-        the specified Virtual Blade type.
+        the specified Virtual Blade class.
 
         """
-        blade = self.__get_blade(blade_type)
+        blade = self.__get_blade(blade_class)
         blade_interconnect = blade.get('blade_interconnect', None)
         if blade_interconnect is None:
             raise ContextualError(
-                "provider config error: Virtual Blade type '%s' has no "
-                "blade interconnect configured" % blade_type
+                "provider config error: Virtual Blade class '%s' has no "
+                "blade interconnect configured" % blade_class
             )
         if blade_interconnect.get("subnetwork", None) != interconnect:
             raise ContextualError(
-                "Virtual Blade type '%s' is not configured to use "
-                "blade interconnect '%s'" % (blade_type, interconnect)
+                "Virtual Blade class '%s' is not configured to use "
+                "blade interconnect '%s'" % (blade_class, interconnect)
             )
         return blade_interconnect
 
-    def __check_blade_instance(self, blade_type, instance):
+    def __check_blade_instance(self, blade_class, instance):
         """class private: Ensure that the specified instance number
-        for a given blade type (blades) is legal.
+        for a given blade class (blades) is legal.
 
         """
         if not isinstance(instance, int):
@@ -104,13 +104,13 @@ class Common:
                 "Virtual Blade instance number must be integer not '%s'" %
                 type(instance)
             )
-        blade = self.__get_blade(blade_type)
+        blade = self.__get_blade(blade_class)
         count = int(blade.get('count', 0))
         if instance < 0 or instance >= count:
             raise ContextualError(
                 "instance number %d out of range for Virtual Blade "
-                "type '%s' which has a count of %d" %
-                (instance, blade_type, count)
+                "class '%s' which has a count of %d" %
+                (instance, blade_class, count)
             )
 
     def get_config(self):
@@ -184,19 +184,19 @@ class Common:
             )
         return zone
 
-    def blade_hostname(self, blade_type, instance):
-        """Get the hostname of a given instance of the specified type
+    def blade_hostname(self, blade_class, instance):
+        """Get the hostname of a given instance of the specified class
         of Virtual Blade.
 
         """
-        self.__check_blade_instance(blade_type, instance)
-        blade = self.__get_blade(blade_type)
+        self.__check_blade_instance(blade_class, instance)
+        blade = self.__get_blade(blade_class)
         if 'hostname' not in blade:
             raise ContextualError(
                 "provider config error: no 'hostname' configured for "
-                "Virtual Blade type '%s'" % blade_type
+                "Virtual Blade class '%s'" % blade_class
             )
-        count = self.blade_count(blade_type)
+        count = self.blade_count(blade_class)
         add_suffix = blade.get('add_hostname_suffix', count > 1)
         hostname = blade['hostname']
         separator = (
@@ -206,74 +206,74 @@ class Common:
         suffix = "%3.3d" % (instance + 1) if add_suffix else ""
         return hostname + separator + suffix
 
-    def blade_ip(self, blade_type, instance, interconnect):
+    def blade_ip(self, blade_class, instance, interconnect):
         """Return the IP address (string) on the named Blade
         Interconnect of a specified instance of the named Virtual
-        Blade type.
+        Blade class.
 
         """
-        self.__check_blade_instance(blade_type, instance)
+        self.__check_blade_instance(blade_class, instance)
         blade_interconnect = self.__get_blade_interconnect(
-            blade_type, interconnect
+            blade_class, interconnect
         )
         ip_addrs = blade_interconnect.get('ip_addrs', None)
         if not ip_addrs:
             raise ContextualError(
-                "provider config error: Virtual Blade type '%s' has no "
+                "provider config error: Virtual Blade class '%s' has no "
                 "'ip_addrs' configured"
             )
         if instance >= len(ip_addrs):
             raise ContextualError(
-                "provider config error: Virtual Blade type is configured with "
-                "fewer ip_addrs (%d) than blade instances (%d)" %
-                (len(ip_addrs), self.blade_count(blade_type))
+                "provider config error: Virtual Blade class is configured "
+                "with fewer ip_addrs (%d) than blade instances (%d)" %
+                (len(ip_addrs), self.blade_count(blade_class))
             )
         return ip_addrs[instance]
 
-    def blade_count(self, blade_type):
+    def blade_count(self, blade_class):
         """Get the number of Virtual Blade instances of the specified
-        type.
+        class.
 
         """
-        blade = self.__get_blade(blade_type)
+        blade = self.__get_blade(blade_class)
         return int(blade.get('count', 0))
 
-    def blade_interconnects(self, blade_type):
+    def blade_interconnects(self, blade_class):
         """Return the list of Blade Interconnects by name connected to
-        the specified type of Virtual Blade.
+        the specified class of Virtual Blade.
 
         """
-        blade = self.__get_blade(blade_type)
+        blade = self.__get_blade(blade_class)
         # The GCP provider only lets us have one interconnect per
-        # blade type, so we are just going to go grab that and make it
+        # blade class, so we are just going to go grab that and make it
         # into a 'list' of one item.
         name = blade.get('blade_interconnect', {}).get('subnetwork', None)
         if name is None:
             raise ContextualError(
                 "provider config error: no 'blade_interconnect.subnetwork' "
-                "found in blade type '%s'" % blade_type
+                "found in blade class '%s'" % blade_class
             )
         return [name]
 
-    def blade_ssh_key_secret(self, blade_type):
+    def blade_ssh_key_secret(self, blade_class):
         """Return the name of the secret used to store the SSH key
-        pair used to reach blades of the specified type through a
+        pair used to reach blades of the specified class through a
         tunneled SSH connection.
 
         """
-        blade = self.__get_blade(blade_type)
+        blade = self.__get_blade(blade_class)
         secret_name = blade.get('ssh_key_secret', None)
         if secret_name is None:
             raise ContextualError(
                 "provider config error: no 'ssh_key_secret' "
-                "found in blade type '%s'" % blade_type
+                "found in blade class '%s'" % blade_class
             )
         return secret_name
 
     def ssh_key_paths(self, secret_name, ignore_missing=False):
         """Return a tuple of paths to files containing the public and
         private SSH keys used to to authenticate with blades of the
-        specified blade type. The tuple is in the form '(public_path,
+        specified blade class. The tuple is in the form '(public_path,
         private_path)' The value of 'private_path' is suitable for use
         with the '-i' option of 'ssh'. If 'ignore_missing' is set, to
         True, the path names will be generated, but no check will be

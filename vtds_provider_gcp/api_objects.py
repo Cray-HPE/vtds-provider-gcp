@@ -36,53 +36,53 @@ class VirtualBlades(metaclass=ABCMeta):
 
     """
     @abstractmethod
-    def blade_types(self):
-        """Get a list of virtual blade types by name.
+    def blade_classes(self):
+        """Get a list of virtual blade classes by name.
 
         """
 
     @abstractmethod
-    def blade_count(self, blade_type):
+    def blade_count(self, blade_class):
         """Get the number of Virtual Blade instances of the specified
-        type.
+        class.
 
         """
 
     @abstractmethod
-    def blade_interconnects(self, blade_type):
+    def blade_interconnects(self, blade_class):
         """Return the list of Blade Interconnects by name connected to
-        the specified type of Virtual Blade.
+        the specified class of Virtual Blade.
 
         """
 
     @abstractmethod
-    def blade_hostname(self, blade_type, instance):
-        """Get the hostname of a given instance of the specified type
+    def blade_hostname(self, blade_class, instance):
+        """Get the hostname of a given instance of the specified class
         of Virtual Blade.
 
         """
 
     @abstractmethod
-    def blade_ip(self, blade_type, instance, interconnect):
+    def blade_ip(self, blade_class, instance, interconnect):
         """Return the IP address (string) on the named Blade
         Interconnect of a specified instance of the named Virtual
-        Blade type.
+        Blade class.
 
         """
 
     @abstractmethod
-    def blade_ssh_key_secret(self, blade_type):
+    def blade_ssh_key_secret(self, blade_class):
         """Return the name of the secret containing the SSH key pair
         used to to authenticate with blades of the specified blade
-        type.
+        class.
 
         """
 
     @abstractmethod
-    def blade_ssh_key_paths(self, blade_type):
+    def blade_ssh_key_paths(self, blade_class):
         """Return a tuple of paths to files containing the public and
         private SSH keys used to to authenticate with blades of the
-        specified blade type. The tuple is in the form '(public_path,
+        specified blade class. The tuple is in the form '(public_path,
         private_path)' The value of 'private_path' is suitable for use
         with the '-i' option of 'ssh'. Before returning this call will
         verify that both files can be opened for reading and will fail
@@ -91,10 +91,10 @@ class VirtualBlades(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def connect_blade(self, blade_type, instance, remote_port):
+    def connect_blade(self, blade_class, instance, remote_port):
         """Establish an external connection to the specified remote
         port on the specified instance of the named Virtual Blade
-        type. Return a BladeConnection object for the connection.
+        class. Return a BladeConnection object for the connection.
 
         BladeConnections are context managed, so if this is used
         in a 'with' clause, upon leaving the 'with' context, the
@@ -106,11 +106,11 @@ class VirtualBlades(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def connect_blades(self, remote_port, blade_types=None):
+    def connect_blades(self, remote_port, blade_classes=None):
         """Establish external connections to the specified remote port
         on all the Virtual Blade instances on all the Virtual Blade
-        types listed by name in 'blade_types'. If 'blade_types' is not
-        provided or None, all available blade types are used. Return a
+        classes listed by name in 'blade_classes'. If 'blade_classes' is not
+        provided or None, all available blade classes are used. Return a
         BladeConnectionSet object representing the connections.
 
         BladeConnectionSets are context managed, so if this is used
@@ -123,10 +123,10 @@ class VirtualBlades(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def ssh_connect_blade(self, blade_type, instance, remote_port):
+    def ssh_connect_blade(self, blade_class, instance, remote_port):
         """Establish an external connection to the SSH server
         port on the specified instance of the named Virtual Blade
-        type. Return a BladeSSHConnection object for the
+        class. Return a BladeSSHConnection object for the
         connection.
 
         BladeSSHConnection are context managed, so if this is used
@@ -139,11 +139,11 @@ class VirtualBlades(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def ssh_connect_blades(self, blade_types=None, remote_port=22):
+    def ssh_connect_blades(self, blade_classes=None, remote_port=22):
         """Establish external connections to the specified remote port
         on all the Virtual Blade instances on all the Virtual Blade
-        types listed by name in 'blade_types'. If 'blade_types' is not
-        provided or None, all available blade types are used. Return a
+        classes listed by name in 'blade_classes'. If 'blade_classes' is not
+        provided or None, all available blade classes are used. Return a
         BladeSSHConnectionSet object representing the
         connections.
 
@@ -182,8 +182,8 @@ class BladeConnection(metaclass=ABCMeta):
 
     """
     @abstractmethod
-    def blade_type(self):
-        """Return the name of the Virtual Blade type of the connected
+    def blade_class(self):
+        """Return the name of the Virtual Blade class of the connected
         Virtual Blade.
 
         """
@@ -248,9 +248,9 @@ class BladeConnectionSet(metaclass=ABCMeta):
 
     """
     @abstractmethod
-    def list_connections(self, blade_type=None):
+    def list_connections(self, blade_class=None):
         """List the connections in the BladeConnectionSet filtered by
-        'blade_type' if that is present. Otherwise imply list all of
+        'blade_class' if that is present. Otherwise imply list all of
         the connections.
 
         """
@@ -363,7 +363,7 @@ class BladeSSHConnection(BladeConnection, metaclass=ABCMeta):
         templating to use any of the attributes of the underlying
         connection:
 
-        - the blade type: 'blade_type'
+        - the blade class: 'blade_class'
         - the blade hostname: 'blade_hostname'
         - the connection port on the blade: 'remote_port'
         - the local connection IP address: 'local_ip'
@@ -425,11 +425,12 @@ class BladeSSHConnectionSet(BladeConnectionSet, metaclass=ABCMeta):
     """
     @abstractmethod
     def copy_to(
-        self, source, destination, recurse=False, logname=None, blade_type=None
+        self, source, destination,
+        recurse=False, logname=None, blade_class=None
     ):
         """Copy the file at a path on the local machine ('source') to
         a path ('dest') on all of the selected blades (based on
-        'blade_type'). If 'blade_type is not specified or None, copy
+        'blade_class'). If 'blade_class is not specified or None, copy
         the file to all connected blades. Wait until all copies
         complete or fail. If any of the copies fail, collect the
         errors they produce to raise a ContextualError exception
@@ -448,10 +449,10 @@ class BladeSSHConnectionSet(BladeConnectionSet, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def run_command(self, cmd, logname=None, blade_type=None):
+    def run_command(self, cmd, logname=None, blade_class=None):
         """Using SSH, run the command in the string 'cmd'
         asynchronously on all connected blades filtered by
-        'blade_type'. If 'blade_type' is unspecified or None, run on
+        'blade_class'. If 'blade_class' is unspecified or None, run on
         all connected blades. The string 'cmd' can be templated using
         Jinja templating to use any of the attributes of the
         underlying connection. In this case, the connection in which
@@ -459,8 +460,8 @@ class BladeSSHConnectionSet(BladeConnectionSet, metaclass=ABCMeta):
         for example, 'blade_hostname' will match the blade on which
         the command runs:
 
-        - the blade type: 'blade_type'
-        - the blade instance within its type: 'instance'
+        - the blade class: 'blade_class'
+        - the blade instance within its class: 'instance'
         - the blade hostname: 'blade_hostname'
         - the connection port on the blade: 'remote_port'
         - the local connection IP address: 'local_ip'
