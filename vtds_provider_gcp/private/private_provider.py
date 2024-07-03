@@ -132,7 +132,7 @@ class PrivateProvider:
             priv_key_file.write("%s\n" % keys['private'])
         return keys
 
-    def __add_ssh_key(self, blade_type, blade_config):
+    def __add_ssh_key(self, blade_class, blade_config):
         """Add the SSH public key from the blade's ssh_key_secret to
         the blade metadata so that when the blade is deployed it will
         have the proper authorized key for SSH access through a blade
@@ -143,7 +143,7 @@ class PrivateProvider:
         if secret_name is None:
             raise ContextualError(
                 "provider config error: no 'ssh_key_secret' "
-                "found in blade type '%s'" % blade_type
+                "found in blade class '%s'" % blade_class
             )
         secret_data = self.secret_manager.read(secret_name)
         keys = (
@@ -169,11 +169,11 @@ class PrivateProvider:
 
         """
         virtual_blades = self.get_virtual_blades()
-        # Get all of the SSH key secret names for all blade types in a
+        # Get all of the SSH key secret names for all blade classes in a
         # set so they are unique
         secret_names = {
-            virtual_blades.blade_ssh_key_secret(blade_type)
-            for blade_type in virtual_blades.blade_types()
+            virtual_blades.blade_ssh_key_secret(blade_class)
+            for blade_class in virtual_blades.blade_classes()
         }
         for secret_name in secret_names:
             keys = self.__read_key_secrets(secret_name)
@@ -187,30 +187,30 @@ class PrivateProvider:
 
         """
         self.terragrunt.initialize()
-        blade_types = self.common.get('virtual_blades', None)
-        if blade_types is None:
+        blade_classes = self.common.get('virtual_blades', None)
+        if blade_classes is None:
             raise ContextualError(
-                "no virtual blade types found in vTDS provider configuration"
+                "no virtual blade classes found in vTDS provider configuration"
             )
-        for blade_type in blade_types:
-            # Expand the inheritance tree for the blade type and put
+        for blade_class in blade_classes:
+            # Expand the inheritance tree for the blade class and put
             # the expanded result back into the configuration. That
             # way, when we write out the configuration we have the
             # full expansion there.
-            if blade_types[blade_type].get('pure_base_class', False):
+            if blade_classes[blade_class].get('pure_base_class', False):
                 # Skip inheritance and installation for pure base
                 # classes since they have no parents, and they aren't
                 # used for deployment.
                 continue
             blade_config = expand_inheritance(
-                blade_types, blade_type
+                blade_classes, blade_class
             )
             virtual_blade = VirtualBlade(self.terragrunt)
             blade_config = virtual_blade.initialize(
-                blade_type, blade_config
+                blade_class, blade_config
             )
-            self.__add_ssh_key(blade_type, blade_config)
-            blade_types[blade_type] = blade_config
+            self.__add_ssh_key(blade_class, blade_config)
+            blade_classes[blade_class] = blade_config
         interconnect_types = self.common.get('blade_interconnects', None)
         if interconnect_types is None:
             raise ContextualError(
