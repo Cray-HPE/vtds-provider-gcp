@@ -308,6 +308,8 @@ class PrivateBladeConnection(BladeConnection):
         self.loc_ip = "127.0.0.1"
         self.loc_port = None
         self.subprocess = None
+        self.log_out = None
+        self.log_err = None
         self._connect()
 
     def _connect(self):
@@ -333,28 +335,36 @@ class PrivateBladeConnection(BladeConnection):
             with TCPServer((self.loc_ip, 0), None) as tmp:
                 self.loc_port = tmp.server_address[1]
 
-            with logfile(out_path) as out, logfile(err_path) as err:
-                # Not using 'with' for the Popen because the Popen
-                # object becomes part of this class instance for the
-                # duration of the class instance's life cycle. The
-                # instance itself is handed out through a context
-                # manager which will disconnect and destroy the Popen
-                # object when the context ends.
-                #
-                # pylint: disable=consider-using-with
-                cmd = [
-                    'gcloud', 'compute', '--project=%s' % project_id,
-                    'start-iap-tunnel',
-                    '--zone=%s' % zone,
-                    '--local-host-port=%s:%s' % (self.loc_ip, self.loc_port),
-                    self.hostname,
-                    str(self.rem_port)
-                ]
-                self.subprocess = Popen(
-                    cmd,
-                    stdout=out, stderr=err,
-                    text=True, encoding='UTF-8'
-                )
+            # Open the log files that will track with the connection
+            # outside of a 'with' block so they persist until the
+            # connection drops.
+            #
+            # pylint: disable=consider-using-with
+            self.log_out = open(out_path, 'w', encoding='UTF-8')
+            # pylint: disable=consider-using-with
+            self.log_err = open(err_path, 'w', encoding='UTF-8')
+
+            # Not using 'with' for the Popen because the Popen
+            # object becomes part of this class instance for the
+            # duration of the class instance's life cycle. The
+            # instance itself is handed out through a context
+            # manager which will disconnect and destroy the Popen
+            # object when the context ends.
+            #
+            # pylint: disable=consider-using-with
+            cmd = [
+                'gcloud', 'compute', '--project=%s' % project_id,
+                'start-iap-tunnel',
+                '--zone=%s' % zone,
+                '--local-host-port=%s:%s' % (self.loc_ip, self.loc_port),
+                self.hostname,
+                str(self.rem_port)
+            ]
+            self.subprocess = Popen(
+                cmd,
+                stdout=self.log_out, stderr=self.log_err,
+                text=True, encoding='UTF-8'
+            )
 
             # Wait for the tunnel to be established before returning.
             retries = 60
@@ -427,9 +437,16 @@ class PrivateBladeConnection(BladeConnection):
             exception_value=None,
             traceback=None
     ):
-        self.subprocess.kill()
+        if self.subprocess is not None:
+            self.subprocess.kill()
         self.subprocess = None
         self.loc_port = None
+        if self.log_out is not None:
+            self.log_out.close()
+        self.log_out = None
+        if self.log_err is not None:
+            self.log_err.close()
+        self.log_err = None
 
     def blade_class(self):
         """Return the name of the Virtual Blade class of the connected
