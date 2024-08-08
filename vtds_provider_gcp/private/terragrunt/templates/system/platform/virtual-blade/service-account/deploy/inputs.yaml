@@ -27,5 +27,5 @@ grant_xpn_roles: false
 prefix: "vtds-"
 name: "{{ blade_class }}"
 source_module:
-  tag: "v4.0.3"
+  tag: "v4.1.0"
   url: "git::https://github.com/terraform-google-modules/terraform-google-service-accounts.git//"
