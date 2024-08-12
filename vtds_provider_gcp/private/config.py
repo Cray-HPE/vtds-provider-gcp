@@ -20,88 +20,21 @@
 # OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 # ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 # OTHER DEALINGS IN THE SOFTWARE.
-"""Private layer implementation module for the GCP provider layer base
-configuration.
+"""Private layer implementation module for the layer base configuration.
 
 """
-
-from os.path import join as path_join
-import yaml
-from vtds_base import ContextualError
+from vtds_base import BaseConfiguration
 from . import CONFIG_DIR
 
 
-class PrivateBaseConfig:
+# pylint: disable=too-few-public-methods
+class BaseConfig(BaseConfiguration):
     """BaseConfig class presents operations on the base configuration
-    of the provider layer to callers.
+    of the layer to callers.
 
     """
     def __init__(self):
         """Constructor
 
         """
-
-    def get_base_config(self):
-        """Retrieve the base configuration for the provider in the
-        form of a python data structure for use in composing and
-        overall vTDS configuration.
-
-        """
-        config = path_join(CONFIG_DIR, "config.yaml")
-        try:
-            with open(config, 'r', encoding='UTF-8') as config_stream:
-                return yaml.safe_load(config_stream)
-        except OSError as err:
-            raise ContextualError(
-                "cannot open GCP provider base config file  '%s' - %s" % (
-                    config, str(err)
-                )
-            ) from err
-        except yaml.YAMLError as err:
-            raise ContextualError(
-                "error parsing GCP provider base config file '%s' - %s" % (
-                    config, str(err)
-                )
-            ) from err
-
-    def get_base_config_text(self):
-        """Retrieve the text of the base configuration file as a text
-        string (UTF-8 encoded) for use in displaying the configuration
-        to users.
-
-        """
-        config = path_join(CONFIG_DIR, "config.yaml")
-        try:
-            with open(config, 'r', encoding='UTF-8') as config_stream:
-                return config_stream.read()
-        except OSError as err:
-            raise ContextualError(
-                "cannot open GCP provider base config file  '%s' - %s" % (
-                    config, str(err)
-                )
-            ) from err
-
-    def get_test_overlay(self):
-        """Retrieve a pre-defined test overlay configuration in the
-        form of a python data structure for use in composing vTDS
-        configurations for testing with this provider layer.
-
-        """
-        config = path_join(CONFIG_DIR, "test_overlay.yaml")
-        try:
-            with open(config, 'r', encoding='UTF-8') as config_stream:
-                return yaml.safe_load(config_stream)
-        except OSError as err:
-            raise ContextualError(
-                "cannot open GCP provider test config overlay file "
-                "'%s' - %s" % (
-                    config, str(err)
-                )
-            ) from err
-        except yaml.YAMLError as err:
-            raise ContextualError(
-                "error parsing GCP provider test config overlay file "
-                "'%s' - %s" % (
-                    config, str(err)
-                )
-            ) from err
+        BaseConfiguration.__init__(self, "GCP provider", CONFIG_DIR)

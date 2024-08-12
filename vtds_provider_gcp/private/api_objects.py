@@ -34,30 +34,27 @@ from socket import (
     SOCK_STREAM
 )
 from time import sleep
-from jinja2 import (
-    Template,
-    TemplateError
-)
 
 from vtds_base import (
     ContextualError,
     log_paths,
     logfile,
-    info_msg
+    info_msg,
+    render_command_string
 )
-from ..api_objects import (
-    VirtualBlades,
-    BladeInterconnects,
-    BladeConnection,
-    BladeConnectionSet,
-    BladeSSHConnection,
-    BladeSSHConnectionSet,
-    Secrets
+from vtds_base.layers.provider import (
+    VirtualBladesBase,
+    BladeInterconnectsBase,
+    BladeConnectionBase,
+    BladeConnectionSetBase,
+    BladeSSHConnectionBase,
+    BladeSSHConnectionSetBase,
+    SecretsBase
 )
 
 
 # pylint: disable=invalid-name
-class PrivateVirtualBlades(VirtualBlades):
+class VirtualBlades(VirtualBladesBase):
     """The external representation of a class of Virtual Blades and
     the public operations that can be performed on blades in that
     class. Virtual Blade operations refer to individual blades by
@@ -146,7 +143,7 @@ class PrivateVirtualBlades(VirtualBlades):
         __exit__() method when the object is no longer needed.
 
         """
-        return PrivateBladeConnection(
+        return BladeConnection(
             self.common, blade_class, instance, remote_port
         )
 
@@ -170,13 +167,13 @@ class PrivateVirtualBlades(VirtualBlades):
             self.blade_classes() if blade_classes is None else blade_classes
         )
         connections = [
-            PrivateBladeConnection(
+            BladeConnection(
                 self.common, blade_class, instance, remote_port
             )
             for blade_class in blade_classes
             for instance in range(0, self.blade_count(blade_class))
         ]
-        return PrivateBladeConnectionSet(self.common, connections)
+        return BladeConnectionSet(self.common, connections)
 
     def ssh_connect_blade(self, blade_class, instance, remote_port=22):
         """Establish an external connection to the SSH server on the
@@ -190,7 +187,7 @@ class PrivateVirtualBlades(VirtualBlades):
         must be managed by the caller, which can be done by calling
         the __exit__() method when the object is no longer needed..
         """
-        return PrivateBladeSSHConnection(
+        return BladeSSHConnection(
             self.common, blade_class, instance,
             self.blade_ssh_key_paths(blade_class)[1],
             remote_port
@@ -216,7 +213,7 @@ class PrivateVirtualBlades(VirtualBlades):
             self.blade_classes() if blade_classes is None else blade_classes
         )
         connections = [
-            PrivateBladeSSHConnection(
+            BladeSSHConnection(
                 self.common, blade_class, instance,
                 self.blade_ssh_key_paths(blade_class)[1],
                 remote_port
@@ -224,10 +221,10 @@ class PrivateVirtualBlades(VirtualBlades):
             for blade_class in blade_classes
             for instance in range(0, self.blade_count(blade_class))
         ]
-        return PrivateBladeSSHConnectionSet(self.common, connections)
+        return BladeSSHConnectionSet(self.common, connections)
 
 
-class PrivateBladeInterconnects(BladeInterconnects):
+class BladeInterconnects(BladeInterconnectsBase):
     """The external representation of the set of Blade Interconnects
     and public operations that can be performed on the interconnects.
 
@@ -289,7 +286,7 @@ class PrivateBladeInterconnects(BladeInterconnects):
         return interconnect['ipv4_cidr']
 
 
-class PrivateBladeConnection(BladeConnection):
+class BladeConnection(BladeConnectionBase):
     """A class containing the relevant information needed to use
     external connections to ports on a specific Virtual Blade.
 
@@ -483,7 +480,7 @@ class PrivateBladeConnection(BladeConnection):
         return self.loc_port
 
 
-class PrivateBladeConnectionSet(BladeConnectionSet):
+class BladeConnectionSet(BladeConnectionSetBase):
     """A class that contains multiple active BladeConnections to
     facilitate operations on multiple simultaneous blades. This class
     is just a wrapper for a list of BladeContainers and should be
@@ -534,8 +531,8 @@ class PrivateBladeConnectionSet(BladeConnectionSet):
         return None
 
 
-# The following is shared by PrivateBladeSSHConnection and
-# PrivateBladeSSHConnectionSet. This should be treaded as private to
+# The following is shared by BladeSSHConnection and
+# BladeSSHConnectionSet. This should be treaded as private to
 # this file. It is pulled out of both classes for easy sharing.
 def wait_for_popen(subprocess, cmd, logpaths, timeout=None, **kwargs):
     """Wait for a Popen() object to reach completion and return
@@ -588,7 +585,7 @@ def wait_for_popen(subprocess, cmd, logpaths, timeout=None, **kwargs):
     return exitval
 
 
-class PrivateBladeSSHConnection(BladeSSHConnection, PrivateBladeConnection):
+class BladeSSHConnection(BladeSSHConnectionBase, BladeConnection):
     """Specifically a connection to the SSH server on a blade (remote
     port 22 unless otherwise specified) with methods to copy files to
     and from the blade using SCP and to run commands on the blade
@@ -600,7 +597,7 @@ class PrivateBladeSSHConnection(BladeSSHConnection, PrivateBladeConnection):
         common, blade_class, instance,  private_key_path, remote_port=22,
         **kwargs
     ):
-        PrivateBladeConnection.__init__(
+        BladeConnection.__init__(
             self,
             common, blade_class, instance, remote_port
         )
@@ -625,7 +622,7 @@ class PrivateBladeSSHConnection(BladeSSHConnection, PrivateBladeConnection):
             exception_value=None,
             traceback=None
     ):
-        PrivateBladeConnection.__exit__(
+        BladeConnection.__exit__(
             self, exception_type, exception_value, traceback
         )
 
@@ -667,16 +664,7 @@ class PrivateBladeSSHConnection(BladeSSHConnection, PrivateBladeConnection):
             'local_ip': self.loc_ip,
             'local_port': self.loc_port
         }
-        try:
-            template = Template(cmd)
-            return template.render(**jinja_values)
-        except TemplateError as err:
-            raise ContextualError(
-                "error using Jinja to render command line '%s' - %s" % (
-                    cmd,
-                    str(err)
-                )
-            ) from err
+        return render_command_string(cmd, jinja_values)
 
     def copy_to(
             self, source, destination,
@@ -854,9 +842,7 @@ class PrivateBladeSSHConnection(BladeSSHConnection, PrivateBladeConnection):
             ) from err
 
 
-class PrivateBladeSSHConnectionSet(
-        BladeSSHConnectionSet, PrivateBladeConnectionSet
-):
+class BladeSSHConnectionSet(BladeSSHConnectionSetBase, BladeConnectionSet):
     """A class to wrap multiple BladeSSHConnections and provide
     operations that run in parallel across multiple connections.
 
@@ -864,7 +850,7 @@ class PrivateBladeSSHConnectionSet(
     def __init__(self, common, connections):
         """Constructor
         """
-        PrivateBladeConnectionSet.__init__(self, common, connections)
+        BladeConnectionSet.__init__(self, common, connections)
 
     def __enter__(self):
         return self
@@ -875,7 +861,7 @@ class PrivateBladeSSHConnectionSet(
             exception_value=None,
             traceback=None
     ):
-        PrivateBladeConnectionSet.__exit__(
+        BladeConnectionSet.__exit__(
             self, exception_type, exception_value, traceback
         )
 
@@ -1035,7 +1021,7 @@ class PrivateBladeSSHConnectionSet(
             )
 
 
-class PrivateSecrets(Secrets):
+class Secrets(SecretsBase):
     """Provider Layers Secrets API object. Provides ways to populate
     and retrieve secrets through the Provider layer. Secrets are
     created by the provider layer by declaring them in the Provider

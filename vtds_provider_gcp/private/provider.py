@@ -38,6 +38,7 @@ from vtds_base import (
     run,
     log_paths
 )
+from vtds_base.layers.provider import ProviderAPI
 
 # Import private classes
 from .terragrunt import (
@@ -47,17 +48,17 @@ from .terragrunt import (
 from .virtual_blade import VirtualBlade
 from .blade_interconnect import BladeInterconnect
 from .api_objects import (
-    PrivateVirtualBlades,
-    PrivateBladeInterconnects,
-    PrivateSecrets
+    VirtualBlades,
+    BladeInterconnects,
+    Secrets
 )
 from .common import Common
 from .secret_manager import SecretManager
 
 
-class PrivateProvider:
-    """PrivateProvider class, implements the GCP provider layer
-    accessed through the python Provider API.
+class Provider(ProviderAPI):
+    """Provider class, implements the GCP provider layer accessed
+    through the python Provider API.
 
     """
     def __init__(self, stack, config, build_dir):
@@ -66,7 +67,13 @@ class PrivateProvider:
         caller that will drive all activities at all layers.
 
         """
-        self.common = Common(config, build_dir)
+        self.__doc__ = ProviderAPI.__doc__
+        provider_config = config.get('provider', None)
+        if provider_config is None:
+            raise ContextualError(
+                "no provider configuration found in top level configuration"
+            )
+        self.common = Common(provider_config, build_dir)
         self.terragrunt = Terragrunt(self.common)
         self.terragrunt_config = TerragruntConfig(self.common, self.terragrunt)
         self.secret_manager = SecretManager(self.common)
@@ -180,12 +187,6 @@ class PrivateProvider:
             self.secret_manager.store(secret_name, safe_dump(keys))
 
     def prepare(self):
-        """Prepare operation. This drives creation of the provider
-        layer Terragrunt configuration and Terragrunt / Terraform
-        control tree used to deploy the GCP resources that will form
-        the foundation of a platform for the vTDS.
-
-        """
         self.terragrunt.initialize()
         blade_classes = self.common.get('virtual_blades', None)
         if blade_classes is None:
@@ -243,11 +244,6 @@ class PrivateProvider:
         self.prepared = True
 
     def validate(self):
-        """Run the terragrunt plan operation on a prepared GCP
-        provider layer to make sure that the configuration produces a
-        working result.
-
-        """
         if not self.prepared:
             raise ContextualError(
                 "cannot validate an unprepared provider, call prepare() first"
@@ -255,12 +251,6 @@ class PrivateProvider:
         self.terragrunt.validate()
 
     def deploy(self):
-        """Deploy operation. This drives the application of the
-        terraform / terragrunt to create the provider layer
-        resources. It can only be called after the prepare operation
-        (prepare()) completes.
-
-        """
         if not self.prepared:
             raise ContextualError(
                 "cannot deploy an unprepared provider, call prepare() first"
@@ -269,52 +259,7 @@ class PrivateProvider:
         self.secret_manager.deploy()
         self.__create_blade_ssh_secrets()
 
-    def shutdown(self, virtual_blade_names):
-        """Shutdown operation. This will shut down (power off) the
-        specified virtual blades, or, if none are specified, all
-        virtual blades, in the provider, leaving them provisioned.
-
-        """
-        # pylint: disable=fixme
-        # XXX - implementation needed here!!!!
-
-    def startup(self, virtual_blade_names):
-        """Startup operation. This will start up (power on) the
-        specified virtual blades, or, if none are specified, all
-        virtual blades, in the provider as long as they are
-        provisioned.
-
-        """
-        # pylint: disable=fixme
-        # XXX - implementation needed here!!!!
-
-    def dismantle(self):
-        """Dismantle operation. This will de-provision all virtual
-        blades in the provider.
-
-        """
-        if not self.prepared:
-            raise ContextualError(
-                "cannot deploy an unprepared provider, call prepare() first"
-            )
-        self.terragrunt.dismantle()
-
-    def restore(self):
-        """Restore operation. This will re-provision all virtual
-        blades in the provider removed by the 'dismantle' operation.
-
-        """
-        if not self.prepared:
-            raise ContextualError(
-                "cannot deploy an unprepared provider, call prepare() first"
-            )
-        self.terragrunt.restore()
-
     def remove(self):
-        """Remove operation. This will remove all resources
-        provisioned for the provider layer.
-
-        """
         if not self.prepared:
             raise ContextualError(
                 "cannot deploy an unprepared provider, call prepare() first"
@@ -322,22 +267,10 @@ class PrivateProvider:
         self.terragrunt.remove()
 
     def get_virtual_blades(self):
-        """Return a the VirtualBlades object containing all of the
-        available non-pure-base-class Virtual Blades.
-
-        """
-        return PrivateVirtualBlades(self.common)
+        return VirtualBlades(self.common)
 
     def get_blade_interconnects(self):
-        """Return a BladeInterconnects object containing all the
-        available non-pure-base-class Blade Interconnects.
-
-        """
-        return PrivateBladeInterconnects(self.common)
+        return BladeInterconnects(self.common)
 
     def get_secrets(self):
-        """Return a Secrets API object that provides access to all
-        available secrets.
-
-        """
-        return PrivateSecrets(self.secret_manager)
+        return Secrets(self.secret_manager)
