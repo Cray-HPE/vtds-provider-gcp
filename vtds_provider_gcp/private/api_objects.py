@@ -66,13 +66,10 @@ class VirtualBlades(VirtualBladesBase):
         """Constructor
 
         """
+        self.__doc__ = VirtualBladesBase.__doc__
         self.common = common
 
     def blade_classes(self):
-        """Get a list of virtual blade classes that are not pure base
-        classes by name.
-
-        """
         virtual_blades = self.common.get('virtual_blades', {})
         return [
             name for name in virtual_blades
@@ -80,89 +77,30 @@ class VirtualBlades(VirtualBladesBase):
         ]
 
     def blade_count(self, blade_class):
-        """Get the number of Virtual Blade instances of the specified
-        class.
-
-        """
         return self.common.blade_count(blade_class)
 
     def blade_interconnects(self, blade_class):
-        """Return the list of Blade Interconnects by name connected to
-        the specified class of Virtual Blade.
-
-        """
         return self.common.blade_interconnects(blade_class)
 
     def blade_hostname(self, blade_class, instance):
-        """Get the hostname of a given instance of the specified class
-        of Virtual Blade.
-
-        """
         return self.common.blade_hostname(blade_class, instance)
 
     def blade_ip(self, blade_class, instance, interconnect):
-        """Return the IP address (string) on the named Blade
-        Interconnect of a specified instance of the named Virtual
-        Blade class.
-
-        """
         return self.common.blade_ip(blade_class, instance, interconnect)
 
     def blade_ssh_key_secret(self, blade_class):
-        """Return the name of the secret containing the SSH key pair
-        used to to authenticate with blades of the specified blade
-        class.
-
-        """
         return self.common.blade_ssh_key_secret(blade_class)
 
     def blade_ssh_key_paths(self, blade_class):
-        """Return a tuple of paths to files containing the public and
-        private SSH keys used to to authenticate with blades of the
-        specified blade class. The tuple is in the form '(public_path,
-        private_path)' The value of 'private_path' is suitable for use
-        with the '-i' option of 'ssh'. Before returning this call will
-        verify that both files can be opened for reading and will fail
-        with a ContextualError if either cannot.
-
-        """
         secret_name = self.common.blade_ssh_key_secret(blade_class)
         return self.common.ssh_key_paths(secret_name)
 
     def connect_blade(self, blade_class, instance, remote_port):
-        """Establish an external connection to the specified remote
-        port on the specified instance of the named Virtual Blade
-        class. Return a BladeConnection object containing the
-        connection.
-
-        BladeConnection objects are context manager enabled (suitable
-        for use in a 'with' clause). Upon leaving the 'with' context,
-        the connection in the BladeConnection is closed. If called
-        outside a 'with' context, the returned object must be managed
-        by the caller, which can be done by calling the
-        __exit__() method when the object is no longer needed.
-
-        """
         return BladeConnection(
             self.common, blade_class, instance, remote_port
         )
 
     def connect_blades(self, remote_port, blade_classes=None):
-        """Establish external connections to the specified remote port
-        on all the Virtual Blade instances on all the Virtual Blade
-        classes listed by name in 'blade_classes'. If 'blade_classes' is not
-        provided or None, all available blade classes are used.  Return
-        a BladeConnectionSet object containing a list of
-        BladeConnection objects representing the connections.
-
-        BladeConnectionSet objects are context manager enabled
-        (suitable for use in a 'with' clause). Upon leaving the 'with'
-        context, the connection in the BladeConnectionSet is cleaned
-        up. If called outside a 'with' context, the returned object
-        must be managed by the caller, which can be done by calling
-        the __exit__() method when the object is no longer needed..
-
-        """
         blade_classes = (
             self.blade_classes() if blade_classes is None else blade_classes
         )
@@ -176,17 +114,6 @@ class VirtualBlades(VirtualBladesBase):
         return BladeConnectionSet(self.common, connections)
 
     def ssh_connect_blade(self, blade_class, instance, remote_port=22):
-        """Establish an external connection to the SSH server on the
-        specified instance of the named Virtual Blade class. Return a
-        a BladeSSHConnection object for the connection.
-
-        BladeSSHConnection objects are context manager enabled
-        (suitable for use in a 'with' clause). Upon leaving the 'with'
-        context, the connection in the BladeSSHConnection is cleaned
-        up. If called outside a 'with' context, the returned object
-        must be managed by the caller, which can be done by calling
-        the __exit__() method when the object is no longer needed..
-        """
         return BladeSSHConnection(
             self.common, blade_class, instance,
             self.blade_ssh_key_paths(blade_class)[1],
@@ -194,21 +121,6 @@ class VirtualBlades(VirtualBladesBase):
         )
 
     def ssh_connect_blades(self, blade_classes=None, remote_port=22):
-        """Establish external connections to the SSH server on all the
-        Virtual Blade instances on all the Virtual Blade classes listed
-        by name in 'blade_classes'. If 'blade_classes' is not provided or
-        None, all available blade classes are used. Return a
-        BladeSSHConnectionSet object representing the
-        connections.
-
-        BladeSSHConnectionSet objects are context manager enabled
-        (suitable for use in a 'with' clause). Upon leaving the 'with'
-        context, the connection in the BladeSSHConnectionSet is cleaned
-        up. If called outside a 'with' context, the returned object
-        must be managed by the caller, which can be done by calling
-        the __exit__() method when the object is no longer needed..
-
-        """
         blade_classes = (
             self.blade_classes() if blade_classes is None else blade_classes
         )
@@ -233,6 +145,7 @@ class BladeInterconnects(BladeInterconnectsBase):
         """Constructor
 
         """
+        self.__doc__ = BladeInterconnectsBase.__doc__
         self.common = common
 
     def __interconnects_by_name(self):
@@ -261,16 +174,9 @@ class BladeInterconnects(BladeInterconnectsBase):
             ) from err
 
     def interconnect_names(self):
-        """Get a list of blade interconnects by name
-
-        """
         return self.__interconnects_by_name().keys()
 
     def ipv4_cidr(self, interconnect_name):
-        """Return the (string) IPv4 CIDR (<IP>/<length>) for the
-        network on the named interconnect.
-
-        """
         blade_interconnects = self.__interconnects_by_name()
         if interconnect_name not in blade_interconnects:
             raise ContextualError(
@@ -295,6 +201,7 @@ class BladeConnection(BladeConnectionBase):
         """Constructor
 
         """
+        self.__doc__ = BladeConnectionBase.__doc__
         self.common = common
         self.b_class = blade_class
         self.instance = instance
@@ -446,37 +353,18 @@ class BladeConnection(BladeConnectionBase):
         self.log_err = None
 
     def blade_class(self):
-        """Return the name of the Virtual Blade class of the connected
-        Virtual Blade.
-
-        """
         return self.b_class
 
     def blade_hostname(self):
-        """Return the hostname of the connected Virtual Blade.
-
-        """
         return self.hostname
 
     def remote_port(self):
-        """Return the TCP port number on the on the Virtual blade to
-        which the BladeConnection connects.
-
-        """
         return self.rem_port
 
     def local_ip(self):
-        """Return the locally reachable IP address of the connection
-        to the Virtual Blade.
-
-        """
         return self.loc_ip
 
     def local_port(self):
-        """Return the TCP port number on the locally reachable IP
-        address of the connection to the Virtual Blade.
-
-        """
         return self.loc_port
 
 
@@ -492,6 +380,7 @@ class BladeConnectionSet(BladeConnectionSetBase):
         """Constructor
 
         """
+        self.__doc__ = BladeConnectionSetBase.__doc__
         self.common = common
         self.blade_connections = blade_connections
 
@@ -508,11 +397,6 @@ class BladeConnectionSet(BladeConnectionSetBase):
             connection.__exit__(exception_type, exception_value, traceback)
 
     def list_connections(self, blade_class=None):
-        """List the connections in the BladeConnectionSet filtered by
-        'blade_class' if that is present. Otherwise imply list all of
-        the connections.
-
-        """
         return [
             blade_connection for blade_connection in self.blade_connections
             if blade_class is None or
@@ -520,11 +404,6 @@ class BladeConnectionSet(BladeConnectionSetBase):
         ]
 
     def get_connection(self, hostname):
-        """Return the connection corresponding to the specified
-        VirtualBlade hostname ('hostname') or None if the hostname is
-        not found.
-
-        """
         for blade_connection in self.blade_connections:
             if blade_connection.blade_hostname() == hostname:
                 return blade_connection
@@ -601,6 +480,7 @@ class BladeSSHConnection(BladeSSHConnectionBase, BladeConnection):
             self,
             common, blade_class, instance, remote_port
         )
+        self.__doc__ = BladeSSHConnectionBase.__doc__
         default_opts = [
             '-o', 'BatchMode=yes',
             '-o', 'NoHostAuthenticationForLocalhost=yes',
@@ -670,32 +550,6 @@ class BladeSSHConnection(BladeSSHConnectionBase, BladeConnection):
             self, source, destination,
             recurse=False, blocking=True, logname=None, **kwargs
     ):
-        """Copy a file from a path on the local machine ('source') to
-        a path on the virtual blade ('dest'). The SCP operation is run
-        under a subprocess.Popen() object, which is returned at the
-        end of the call. If additional keyword arguments are supplied,
-        they may be used to override defaults set up by this function
-        and passed to subprocess.Popen() or simply passed on to
-        subprocess.Popen() as keyword arguments.
-
-        If the 'recurse' argument is 'True' and the source is a
-        directory, the directory and all of its descendents will be
-        copied. Otherwise, the source should be a file and it alone
-        will be copied.
-
-        If the 'blocking' option is True (default), copy_to() will
-        block waiting for the copy to complete (or fail) and raise a
-        ContextualError exception if it fails. If the 'blocking'
-        option is False, copy_to() will return immediately once the
-        Popen() object is created and let the caller manage the
-        sub-process.
-
-        If the 'logname' argument is provided and not None, use the
-        string found there to compose a pair of log files to capture
-        standard output and standard error. Otherwise a generic log
-        name is created.
-
-        """
         logname = (
             logname if logname is not None else
             "copy-to-%s-%s" % (source, destination)
@@ -729,32 +583,6 @@ class BladeSSHConnection(BladeSSHConnectionBase, BladeConnection):
         self, source, destination,
             recurse=False, blocking=True, logname=None, **kwargs
     ):
-        """Copy a file from a path on the blade ('source') to a path
-        on the local machine ('dest'). The SCP operation is run under
-        a subprocess.Popen() object, which is returned at the end of
-        the call. If additional keyword arguments are supplied, they
-        may be used to override defaults set up by this function and
-        passed to subprocess.Popen() or simply passed on to
-        subprocess.Popen() as keyword arguments.
-
-        If the 'recurse' argument is 'True' and the source is a
-        directory, the directory and all of its descendents will be
-        copied. Otherwise, the source should be a file and it alone
-        will be copied.
-
-        If the 'blocking' option is True (default), copy_from() will
-        block waiting for the copy to complete (or fail) and raise a
-        ContextualError exception if it fails. If the 'blocking'
-        option is False, copy_from() will return immediately once the
-        Popen() object is created and let the caller manage the
-        sub-process.
-
-        If the 'logname' argument is provided and not None, use the
-        string found there to compose a pair of log files to capture
-        standard output and standard error. Otherwise a generic log
-        name is created.
-
-        """
         logname = (
             logname if logname is not None else
             "copy-from-%s-%s" % (source, destination)
@@ -785,42 +613,6 @@ class BladeSSHConnection(BladeSSHConnectionBase, BladeConnection):
             ) from err
 
     def run_command(self, cmd, blocking=True, logfiles=None, **kwargs):
-        """Using SSH, run the command in the string 'cmd'
-        asynchronously on the blade. The string 'cmd' can be templated
-        using Jinja templating to use any of the attributes of the
-        underlying connection:
-
-        - the blade class: 'blade_class'
-        - the blade instance within its class: 'instance'
-        - the blade hostname: 'blade_hostname'
-        - the connection port on the blade: 'remote_port'
-        - the local connection IP address: 'local_ip'
-        - the local connection port: 'local_port'
-
-        The resulting command will be executed by the shell on the
-        blade under an SSH session by creating a subprocess.Popen()
-        object. If additional keyword arguments are supplied, they may
-        be used to override defaults set up by this function and
-        passed to subprocess.Popen() or simply passed on to
-        subprocess.Popen() as keyword arguments.
-
-        If the 'logfiles' argument is provided, it contains a two
-        element tuple telling run_command where to put standard output
-        and standard error logging for the command respectively.
-        Normally, these are specified as pathnames to log
-        files. Either or both can also be a file object or None. If a
-        file object is used, the output is written to the file. If
-        None is used, the corresponding output is not redirected and
-        the default Popen() behavior is used.
-
-        If the 'blocking' option is True (default), run_command() will
-        block waiting for the command to complete (or fail) and raise
-        a ContextualError exception if it fails. If the 'blocking'
-        option is False, run_command() will return immediately once the
-        Popen() object is created and let the caller manage the
-        sub-process.
-
-        """
         cmd = self._render_cmd(cmd)
         logfiles = logfiles if logfiles is not None else (None, None)
         ssh_cmd = [
@@ -851,6 +643,7 @@ class BladeSSHConnectionSet(BladeSSHConnectionSetBase, BladeConnectionSet):
         """Constructor
         """
         BladeConnectionSet.__init__(self, common, connections)
+        self.__doc__ = BladeSSHConnectionSetBase.__doc__
 
     def __enter__(self):
         return self
@@ -869,23 +662,6 @@ class BladeSSHConnectionSet(BladeSSHConnectionSetBase, BladeConnectionSet):
         self, source, destination,
         recurse=False, logname=None, blade_class=None
     ):
-        """Copy the file at a path on the local machine ('source') to
-        a path ('dest') on all of the selected blades (based on
-        'blade_class'). If 'blade_class is not specified or None, copy
-        the file to all connected blades. Wait until all copies
-        complete or fail. If any of the copies fail, collect the
-        errors they produce to raise a ContextualError exception
-        describing the failures.
-
-        If the 'recurse' option is True and the local file is a
-        directory, the directory and all of its descendants will be
-        copied.
-
-        If the 'logname' argument is provided, use the string found
-        there to compose the 'logfiles' argument to be passed to each
-        copy operation.
-
-        """
         logname = (
             logname if logname is not None else
             "parallel-copy-to-%s-%s" % (source, destination)
@@ -941,33 +717,6 @@ class BladeSSHConnectionSet(BladeSSHConnectionSetBase, BladeConnectionSet):
             )
 
     def run_command(self, cmd, logname=None, blade_class=None):
-        """Using SSH, run the command in the string 'cmd'
-        asynchronously on all connected blades filtered by
-        'blade_class'. If 'blade_class' is unspecified or None, run on
-        all connected blades. The string 'cmd' can be templated using
-        Jinja templating to use any of the attributes of the
-        underlying connection. In this case, the connection in which
-        the command is being run will be used for the templating, so,
-        for example, 'blade_hostname' will match the blade on which
-        the command runs:
-
-        - the blade class: 'blade_class'
-        - the blade hostname: 'blade_hostname'
-        - the connection port on the blade: 'remote_port'
-        - the local connection IP address: 'local_ip'
-        - the local connection port: 'local_port'
-
-        Wait until all commands complete or fail. If any of the
-        commands fail, collect the errors they produce to raise a
-        ContextualError exception describing the failures.
-
-        If the 'logname' argument is provided, use the string found
-        there to compose paths to two files, one that will contain the
-        standard output from the command and one that will contain the
-        standard input. The paths to these files will be included in
-        any error reporting from the operation.
-
-        """
         logname = (
             logname if logname is not None else
             "parallel-run-%s" % (cmd.split()[0])
@@ -1038,17 +787,11 @@ class Secrets(SecretsBase):
         """Construtor
 
         """
+        self.__doc__ = SecretsBase.__doc__
         self.secret_manager = secret_manager
 
     def store(self, name, value):
-        """Store a value (string) in the named secret.
-
-        """
         self.secret_manager.store(name, value)
 
     def read(self, name):
-        """Read the value (string) stored in a named secret. If no
-        value is present, return None.
-
-        """
         return self.secret_manager.read(name)
