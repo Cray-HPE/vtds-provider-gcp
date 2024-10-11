@@ -45,6 +45,7 @@ dependency "service_project" {
 
 dependency "{{ interconnect_name }}" {
   config_path = find_in_parent_folders("blade-interconnect/{{ interconnect_name }}/subnet/deploy")
+  skip_outputs = true
 }
 
 dependency "instance_template" {

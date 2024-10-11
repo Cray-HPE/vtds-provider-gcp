@@ -55,6 +55,7 @@ dependency "service_account" {
 
 dependency "{{ interconnect_name }}" {
   config_path = find_in_parent_folders("system/platform/blade-interconnect/{{ interconnect_name }}/subnet/deploy")
+  skip_outputs = true
 }
 
 terraform {

@@ -54,5 +54,5 @@ inputs = {
   mtu                                      = local.vtds_vars.{{ config_path }}.mtu
   enable_ipv6_ula                          = local.vtds_vars.{{ config_path }}.enable_ipv6_ula
   internal_ipv6_range                      = local.vtds_vars.{{ config_path }}.internal_ipv6_range
-  network_firewall_policy_enforcment_order = local.vtds_vars.{{ config_path }}.network_firewall_policy_enforcement_order
+#  network_firewall_policy_enforcment_order = local.vtds_vars.{{ config_path }}.network_firewall_policy_enforcement_order
 }

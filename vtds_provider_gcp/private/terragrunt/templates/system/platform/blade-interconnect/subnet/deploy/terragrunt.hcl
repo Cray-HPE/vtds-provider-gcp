@@ -42,6 +42,7 @@ dependency "service_project" {
 
 dependency "vpc" {
   config_path = find_in_parent_folders("vpc/deploy")
+  skip_outputs = true
 }
 
 terraform {

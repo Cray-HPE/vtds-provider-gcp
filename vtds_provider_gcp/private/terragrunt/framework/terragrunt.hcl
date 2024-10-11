@@ -25,6 +25,14 @@
 
 locals {
   vtds_vars  = yamldecode(file("vtds.yaml"))
+  terragrunt_version = format(
+      "= %s",
+      local.vtds_vars.provider.terragrunt.terragrunt_version
+  )
+  terraform_version = format(
+      "= %s",
+      local.vtds_vars.provider.terragrunt.terraform_version
+  )
   trusted_cidrs = setunion(
       local.vtds_vars.provider.organization.trusted_cidrs,
       local.vtds_vars.provider.project.trusted_cidrs
@@ -65,6 +73,5 @@ inputs = {
   labels                     = local.vtds_vars.provider.project.labels
   trusted_cidrs              = local.trusted_cidrs
 }
-
-terraform_version_constraint  = "= 1.0.7"
-terragrunt_version_constraint = "= 0.32.4"
+terraform_version_constraint  = local.terraform_version
+terragrunt_version_constraint = local.terragrunt_version
