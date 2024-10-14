@@ -175,7 +175,7 @@ provider:
       flow_logs_sampling: "0.5"
       flow_logs_metadata: "INCLUDE_ALL_METADATA"
       flow_logs_filter: "true"
-      flow_logs_metadata_fields: ""
+      flow_logs_metadata_fields: []
       stack_type: null
       ipv6_access_type: null
       firewall:
@@ -360,7 +360,6 @@ provider:
         # network. Each IP address will be assigned sequentially one
         # per GCP instance (blade).
         ip_addrs: []
-        alias_ip_range: null
       metadata:
         metadata:
           "serial-port-enable": "true"

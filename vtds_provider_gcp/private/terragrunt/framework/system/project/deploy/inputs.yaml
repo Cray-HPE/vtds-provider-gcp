@@ -33,5 +33,5 @@ disable_services_on_destroy: false
 labels: { contact: "vtds-team", team: "vtds", role: "vtds-support" }
 name: "vtds"
 source_module:
-  tag: "v11.2.0"
+  tag: "v17.0.0"
   url: "git::https://github.com/terraform-google-modules/terraform-google-project-factory.git//"

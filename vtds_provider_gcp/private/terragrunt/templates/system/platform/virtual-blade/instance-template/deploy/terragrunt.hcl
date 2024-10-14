@@ -104,5 +104,4 @@ inputs = {
   access_config                    = local.vtds_vars.{{ config_path }}.access_config
   ipv6_access_config               = local.vtds_vars.{{ config_path }}.ipv6_access_config
   gpu                              = local.vtds_vars.{{ config_path }}.gpu
-  alias_ip_range                   = local.vtds_vars.{{ config_path }}.blade_interconnect.alias_ip_range
 }

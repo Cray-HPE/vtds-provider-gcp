@@ -22,5 +22,5 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 source_module:
-  tag: "v7.5.0-cray"
-  url: "git::https://github.com/Cray-HPE/terraform-google-vm.git//modules/compute_instance"
+  tag: "v12.0.0"
+  url: "git::https://github.com/terraform-google-modules/terraform-google-vm.git//modules/compute_instance"
