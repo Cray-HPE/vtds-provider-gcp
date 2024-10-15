@@ -111,6 +111,9 @@ provider:
       terraform: "true"
     orgpolicies_skip_execution: false
     gcloud_skip_download: true
+    # Deletion policy. Defaults to "PREVENT" which will prevent the vTDS command from being
+    # able to delete the project. Only change this if you are okay with that.
+    deletion_policy: DELETE
 
   blade_interconnects:
     # Blade interconnects provide the provider layer networking used

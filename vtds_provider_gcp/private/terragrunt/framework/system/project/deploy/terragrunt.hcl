@@ -58,4 +58,5 @@ inputs = {
   name                        = local.name
   project_id                  = local.name
   random_project_id           = local.vtds_vars.provider.project.random_project_id
+  deletion_policy             = local.vtds_vars.provider.project.deletion_policy
 }
