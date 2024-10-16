@@ -33,16 +33,142 @@ from shutil import (
     rmtree
 )
 from os.path import join as path_join
-from subprocess import Popen, TimeoutExpired
+from subprocess import Popen, TimeoutExpired, PIPE
 import yaml
 from vtds_base import (
     ContextualError,
+    run,
     log_paths,
     logfile,
     write_out
 )
 
 from . import TERRAGRUNT_DIR
+
+
+class VersionManager:
+    """Base class for terraform and terragrunt version managers which
+    contains the common data and functions used by both.
+
+    """
+    def __init__(self, common, mgr_cmd, mgr_subsystem):
+        """Constructor
+
+        """
+        self.mgr_cmd = mgr_cmd
+        self.mgr_subsystem = mgr_subsystem
+        self.versions_installed = []
+        self.version_inuse = None
+        self.common = common
+        self.__init_version_info()
+
+    def __init_version_info(self):
+        """Initialize the list of installed versions and the currently
+        used version by querying the version manager.
+
+        """
+        # Unfortunately, 'tfenv list' fails if no versions of
+        # terraform are installed, so run '<cmd> install latest' to
+        # make sure something is installed. This works for both tgenv
+        # and tfenv.
+        logs = log_paths(
+            self.common.build_dir(),
+            "prime-%s-version-manager" % (self.mgr_subsystem)
+        )
+        run([self.mgr_cmd, 'install', 'latest'], logs)
+
+        # This builds both stdout and stderr log paths to pass to
+        # run(), but we are going to override the stdout path by using
+        # stdout=PIPE in the run call itself, so the output will be
+        # captured in the result.
+        logs = log_paths(
+            self.common.build_dir(),
+            "init-%s-version-manager" % (self.mgr_subsystem)
+        )
+        output = run([self.mgr_cmd, 'list'], logs, stdout=PIPE).stdout
+        versions = output.split('\n')[:-1]
+        # Find the version that starts with '* ' and make that the
+        # version in use.
+        inuse = [
+            version.split(' ')[1]
+            for version in versions
+            if version[:2] == '* '
+        ]
+        self.version_inuse = inuse[0] if inuse else None
+        # Grab all of the version and make those the versions
+        # installed.
+        self.versions_installed = [
+            version.split(' ')[1] if version[0] == '*'
+            else version.split(' ')[2]
+            for version in versions
+        ] if versions else []
+
+    def __using_version(self, version):
+        """Check whether the specified version is currently in use...
+
+        """
+        return version == self.version_inuse
+
+    def __have_version(self, version):
+        """Check whether the specified version is currently installed...
+
+        """
+        return version in self.versions_installed
+
+    def __install_version(self, version):
+        """Install the requested version
+
+        """
+        logs = log_paths(
+            self.common.build_dir(),
+            "install-%s-version-%s" % (self.mgr_subsystem, version)
+        )
+        run([self.mgr_cmd, 'install', version], logs)
+
+    def __use_version(self, version):
+        """Put the requested version into use
+
+        """
+        logs = log_paths(
+            self.common.build_dir(),
+            "use-%s-version-%s" % (self.mgr_subsystem, version)
+        )
+        run([self.mgr_cmd, 'use', version], logs)
+        self.version_inuse = version
+
+    def use_version(self, version):
+        """Switch to using the specified version, installing it as
+        needed.
+
+        """
+        if not self.__have_version(version):
+            self.__install_version(version)
+        if not self.__using_version(version):
+            self.__use_version(version)
+
+
+class TFEnv(VersionManager):
+    """A class that provides access to the Terraform Version Manager
+    with cached knowledge of what is installed and what is in use.
+
+    """
+    def __init__(self, common):
+        """Constructor
+
+        """
+        VersionManager.__init__(self, common, "tfenv", "terraform")
+
+
+class TGEnv(VersionManager):
+    """A class that provides access to the Terragrunt Version Manager
+    with cached knowledge of what is installed and what is in use.
+
+    """
+    def __init__(self, common):
+        """Constructor
+
+        """
+        VersionManager.__init__(self, common, "tgenv", "terragrunt")
 
 
 class Terragrunt:
@@ -65,6 +191,29 @@ class Terragrunt:
         content.
 
         """
+        # Setup terraform and terragrunt versions to use based on the
+        # config
+        tf_version = (
+            self.common.get("terragrunt", {})
+            .get("terraform_version", None)
+        )
+        if tf_version is None:
+            raise ContextualError(
+                "provider.terraform.terraform_version not available"
+            )
+        tg_version = (
+            self.common.get("terragrunt", {})
+            .get("terragrunt_version", None)
+        )
+        if tg_version is None:
+            raise ContextualError(
+                "provider.terragrunt.terraform_version not available"
+            )
+        tf_env = TFEnv(self.common)
+        tf_env.use_version(tf_version)
+        tg_env = TGEnv(self.common)
+        tg_env.use_version(tg_version)
+
         # Figure out the terragrunt command to use from the
         # configuration.
         self.tg_cmd = self.common.get("commands", {}).get(
