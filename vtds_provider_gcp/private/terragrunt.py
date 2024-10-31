@@ -253,7 +253,8 @@ class Terragrunt:
                         self.tg_cmd,
                         'run-all',
                         operation,
-                        '--terragrunt-non-interactive'
+                        '--terragrunt-non-interactive',
+                        '--terragrunt-provider-cache'
                     ],
                     stdout=out, stderr=err, cwd=directory
                 ) as terragrunt:
