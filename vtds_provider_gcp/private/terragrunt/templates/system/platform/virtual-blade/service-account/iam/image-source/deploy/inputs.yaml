@@ -22,5 +22,5 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 source_module:
-  tag: "v8.0.0"
-  url: "git::https://github.com/terraform-google-modules/terraform-google-iam.git//modules/projects_iam"
+  version: "version=8.0.0"
+  url: "tfr:///terraform-google-modules/iam/google//modules/projects_iam"

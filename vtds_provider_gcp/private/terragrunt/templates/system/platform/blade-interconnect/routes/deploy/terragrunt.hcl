@@ -46,7 +46,7 @@ dependency "vpc" {
 }
 
 terraform {
-  source = format("%s?ref=%s", local.inputs_vars.source_module.url, local.inputs_vars.source_module.tag)
+  source = format("%s?%s", local.inputs_vars.source_module.url, local.inputs_vars.source_module.version)
 }
 
 inputs = {

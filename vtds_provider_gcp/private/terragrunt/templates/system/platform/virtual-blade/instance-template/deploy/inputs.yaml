@@ -24,5 +24,5 @@
 scopes:
   - "cloud-platform"
 source_module:
-  tag: "v12.0.0"
-  url: "git::https://github.com/terraform-google-modules/terraform-google-vm.git//modules/instance_template"
+  version: "version=12.0.0"
+  url: "tfr:///terraform-google-modules/vm/google//modules/instance_template"

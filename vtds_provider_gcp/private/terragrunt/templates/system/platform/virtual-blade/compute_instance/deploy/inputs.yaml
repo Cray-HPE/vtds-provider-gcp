@@ -22,5 +22,5 @@
 # OTHER DEALINGS IN THE SOFTWARE.
 #
 source_module:
-  tag: "v12.0.0"
-  url: "git::https://github.com/terraform-google-modules/terraform-google-vm.git//modules/compute_instance"
+  version: "version=12.0.0"
+  url: "tfr:///terraform-google-modules/vm/google//modules/compute_instance"

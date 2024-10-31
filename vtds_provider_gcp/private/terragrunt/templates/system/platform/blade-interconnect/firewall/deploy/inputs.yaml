@@ -1,3 +1,3 @@
 source_module:
-  tag: "v9.3.0"
-  url: "git::https://github.com/terraform-google-modules/terraform-google-network.git//modules/firewall-rules"
+  version: "version=9.3.0"
+  url: "tfr:///terraform-google-modules/network/google//modules/firewall-rules"
