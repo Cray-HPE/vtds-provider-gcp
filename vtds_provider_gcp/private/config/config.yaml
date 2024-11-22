@@ -327,7 +327,7 @@ provider:
         threads_per_core: 1
         boot_disk:
           source_image: ""
-          source_image_family: "ubuntu-minimal-2310-mantic-amd64-v20240125"
+          source_image_family: "ubuntu-minimal-2204-jammy-v20241115"
           source_image_project: "ubuntu-os-cloud"
           source_image_private: False
           disk_size_gb: 10
