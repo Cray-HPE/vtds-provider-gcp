@@ -51,7 +51,7 @@ class VersionManager:
     contains the common data and functions used by both.
 
     """
-    def __init__(self, common, mgr_cmd, mgr_subsystem):
+    def __init__(self, common, mgr_cmd, mgr_subsystem, dummy_version):
         """Constructor
 
         """
@@ -59,6 +59,7 @@ class VersionManager:
         self.mgr_subsystem = mgr_subsystem
         self.versions_installed = []
         self.version_inuse = None
+        self.dummy_version = dummy_version
         self.common = common
         self.__init_version_info()
 
@@ -68,14 +69,13 @@ class VersionManager:
 
         """
         # Unfortunately, 'tfenv list' fails if no versions of
-        # terraform are installed, so run '<cmd> install latest' to
-        # make sure something is installed. This works for both tgenv
-        # and tfenv.
+        # terraform are installed, so run '<cmd> install <dummy_version>'
+        # to make sure something is installed.
         logs = log_paths(
             self.common.build_dir(),
             "prime-%s-version-manager" % (self.mgr_subsystem)
         )
-        run([self.mgr_cmd, 'install', 'latest'], logs)
+        run([self.mgr_cmd, 'install', self.dummy_version], logs)
 
         # This builds both stdout and stderr log paths to pass to
         # run(), but we are going to override the stdout path by using
@@ -156,7 +156,9 @@ class TFEnv(VersionManager):
         """Constructor
 
         """
-        VersionManager.__init__(self, common, "tfenv", "terraform")
+        # Pick a dummy version that is known to exist (in this case 1.10.5)
+        # because 'latest' doesn't work.
+        VersionManager.__init__(self, common, "tfenv", "terraform", "1.10.5")
 
 
 class TGEnv(VersionManager):
@@ -168,7 +170,9 @@ class TGEnv(VersionManager):
         """Constructor
 
         """
-        VersionManager.__init__(self, common, "tgenv", "terragrunt")
+        # Pick a dummy version that is known to exist (in this case 0.72.5)
+        # because 'latest' doesn't work.
+        VersionManager.__init__(self, common, "tgenv", "terragrunt", "0.72.5")
 
 
 class Terragrunt:
