@@ -279,3 +279,11 @@ class SecretManager:
                 "attempt to read value from an unknown secret '%s'" % name
             )
         return self.__read_secret(secret)
+
+    def application_metadata(self, name):
+        """Get the application metadata for a named secret from its
+        config.
+
+        """
+        secret = self.secrets.get(name, None)
+        return secret.get('application_metadata', {})
