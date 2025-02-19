@@ -145,9 +145,9 @@ provider:
     # Interconnects.
     #
     # All classes of Blade Interconnects specified here will be
-    # consider for inclusion in the generation of Terragrunt /
-    # Terraform controls and the associatedcreation of GCP objects
-    # witin your project. To suppress generation of Terraform /
+    # considered for inclusion in the generation of Terragrunt /
+    # Terraform controls and the associated creation of GCP objects
+    # within your project. To suppress generation of Terraform /
     # Terragrunt for a base class that is being used purely as a base
     # class, set the 'pure_base_class' parameter to true. This will
     # allow other classes to be derived from the base without making
@@ -284,6 +284,19 @@ provider:
           # next_hop_vpn_tunnel: ""
           # next_hop_ilb: ""
           priority: "1000"
+      # Applications sometimes need concrete configuration information
+      # that is most appropriately stored with the objects implemented
+      # within the layers instead of trying to map information onto
+      # those objects abstractly at the application layer. The
+      # application_metadata section of the configuration is only
+      # understood by a given application layer and provides a place to
+      # put such information. The intent here is that a specific
+      # configuration set used for a given application may place
+      # metadata with API objects for use by the application itself. Use
+      # of application_metadata should be done sparingly and with
+      # caution because it has the power to entangle a given vTDS stack
+      # and make it non-portable.
+      application_metadata: {}
   virtual_blades:
     # Virtual Blades are implemented here as GCP instances, typically
     # with nested virtualization enabled so that the actual node(s)
@@ -401,6 +414,24 @@ provider:
       ipv6_access_config: []
       gpu: null
       resource_policies: []
+      # Applications sometimes need concrete configuration information
+      # that is most appropriately stored with the objects implemented
+      # within the layers instead of trying to map information onto
+      # those objects abstractly at the application layer. The
+      # application_metadata section of the configuration is only
+      # understood by a given application layer and provides a place to
+      # put such information. The intent here is that a specific
+      # configuration set used for a given application may place
+      # metadata with API objects for use by the application itself. Use
+      # of application_metadata should be done sparingly and with
+      # caution because it has the power to entangle a given vTDS stack
+      # and make it non-portable.
+      #
+      # Both the virtual blade class and the virtual blades carried by
+      # the blade class will contain the metadata defined here. There is
+      # no mechanism for making discrete metadata for individual virtual
+      # blades.
+      application_metadata: {}
   secrets:
     # All of the secrets to be used in your vTDS system are declared
     # here, though their values and use may come from other
@@ -425,3 +456,16 @@ provider:
       # less than 16KiB.
       annotations:
         layer: provider
+      # Applications sometimes need concrete configuration information
+      # that is most appropriately stored with the objects implemented
+      # within the layers instead of trying to map information onto
+      # those objects abstractly at the application layer. The
+      # application_metadata section of the configuration is only
+      # understood by a given application layer and provides a place to
+      # put such information. The intent here is that a specific
+      # configuration set used for a given application may place
+      # metadata with API objects for use by the application itself. Use
+      # of application_metadata should be done sparingly and with
+      # caution because it has the power to entangle a given vTDS stack
+      # and make it non-portable.
+      application_metadata: {}

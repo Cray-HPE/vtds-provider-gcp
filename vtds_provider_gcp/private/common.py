@@ -184,6 +184,14 @@ class Common:
             )
         return zone
 
+    def blade_application_metadata(self, blade_class):
+        """Get the 'application_metadata' section of a named blade
+        class.
+
+        """
+        blade = self.__get_blade(blade_class)
+        return blade.get('application_metadata', {})
+
     def blade_hostname(self, blade_class, instance):
         """Get the hostname of a given instance of the specified class
         of Virtual Blade.

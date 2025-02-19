@@ -76,6 +76,9 @@ class VirtualBlades(VirtualBladesBase):
             if not virtual_blades[name].get('pure_base_class', False)
         ]
 
+    def application_metadata(self, blade_class):
+        return self.common.blade_application_metadata(blade_class)
+
     def blade_count(self, blade_class):
         return self.common.blade_count(blade_class)
 
@@ -173,17 +176,26 @@ class BladeInterconnects(BladeInterconnectsBase):
                 "the following blade interconnects: %s" % str(missing_names)
             ) from err
 
-    def interconnect_names(self):
-        return self.__interconnects_by_name().keys()
-
-    def ipv4_cidr(self, interconnect_name):
+    def __named_interconnect(self, interconnect_name):
+        """Look up a pspecifically named interconnect and return it.
+        """
         blade_interconnects = self.__interconnects_by_name()
         if interconnect_name not in blade_interconnects:
             raise ContextualError(
                 "requesting ipv4_cidr of unknown blade interconnect '%s'" %
                 interconnect_name
             )
-        interconnect = blade_interconnects.get(interconnect_name, {})
+        return blade_interconnects.get(interconnect_name, {})
+
+    def application_metadata(self, interconnect_name):
+        interconnect = self.__named_interconnect(interconnect_name)
+        return interconnect.get('application_metadata', {})
+
+    def interconnect_names(self):
+        return self.__interconnects_by_name().keys()
+
+    def ipv4_cidr(self, interconnect_name):
+        interconnect = self.__named_interconnect(interconnect_name)
         if 'ipv4_cidr' not in interconnect:
             raise ContextualError(
                 "provider layer configuration error: no 'ipv4_cidr' found in "
@@ -795,3 +807,6 @@ class Secrets(SecretsBase):
 
     def read(self, name):
         return self.secret_manager.read(name)
+
+    def application_metadata(self, name):
+        return self.secret_manager.application_metadata(name)
