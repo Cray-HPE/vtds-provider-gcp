@@ -308,3 +308,83 @@ class Common:
                     "(verification) - %s" % str(err)
                 ) from err
         return (public_path, private_path)
+
+    def system_name(self):
+        """Get the system name used to create the cluster on the
+        provider. Returns a string representing the system name.
+
+        """
+        name = (
+            self.config.get('project', {}).get('base_name', None)
+        )
+        if name is None:
+            raise ContextualError(
+                "provider config error: cannot find 'base_name' in "
+                "'provider.project' when trying to construct the system "
+                "name"
+            )
+        return name
+
+    def site_ntp_server(self, address_family):
+        """Get the hostname / address of the NTP server offered by the
+        provider or site in the specified address family. The
+        'address_family' parameter is a string specifies the address
+        family of the address to be returned, with a default value of
+        'AF_INET'. Returns a dictionary containing the following
+        fields:
+
+        - 'address_family' - the requested address family as passed in
+        - 'hostname' - the host name of the NTP server if known, None if not
+        - 'address' - the address within the address family of the NTP
+          server if known, None if not
+
+        Returns an empty dictionary if the specified 'address_family'
+        is not supported by the provider or not configured in the
+        Provider configuration.
+
+        """
+        servers = (
+            self.config.get('project', {})
+            .get('site', {})
+            .get('ntp', None)
+            .get(address_family, [])
+        )
+        return [
+            {
+                'address_family': address_family,
+                'hostname': server.get('hostname', None),
+                'address': server.get('address', None)
+            }
+            for server in servers
+        ]
+
+    def site_dns_servers(self, address_family='AF_INET'):
+        """Get the address of the DNS server offered by the provider
+        or site on the specified address family. The address_family'
+        parameter is a string specifies the address family of the
+        address to be returned, with a default value of
+        'AF_INET'. Returns a list of dictionaries containing the
+        following fields:
+
+        - 'address_family' - the requested address family as passed in
+        - 'address' - the address within the address family of the NTP
+          server if known, None if not
+
+        Returns an empty list if the specified 'address_family'
+        is not supported by the provider or not configured in the
+        Provider configuration.
+
+        """
+        servers = (
+            self.config.get('project', {})
+            .get('site', {})
+            .get('dns', None)
+            .get(address_family, [])
+        )
+        return [
+            {
+                'address_family': address_family,
+                'address': server.get('address', None)
+            }
+            for server in servers
+        ]
