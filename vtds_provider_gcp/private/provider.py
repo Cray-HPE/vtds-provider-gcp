@@ -187,6 +187,9 @@ class Provider(ProviderAPI):
             keys = self.__read_key_secrets(secret_name)
             self.secret_manager.store(secret_name, safe_dump(keys))
 
+    def consolidate(self):
+        return
+
     def prepare(self):
         self.terragrunt.initialize()
         blade_classes = self.common.get('virtual_blades', None)
