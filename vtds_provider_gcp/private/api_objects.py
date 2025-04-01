@@ -43,6 +43,7 @@ from vtds_base import (
     render_command_string
 )
 from vtds_base.layers.provider import (
+    SiteConfigBase,
     VirtualBladesBase,
     BladeInterconnectsBase,
     BladeConnectionBase,
@@ -51,6 +52,28 @@ from vtds_base.layers.provider import (
     BladeSSHConnectionSetBase,
     SecretsBase
 )
+
+
+class SiteConfig(SiteConfigBase):
+    """Site configuration information composed by the Provider layer
+    for public use.
+
+    """
+    def __init__(self, common):
+        """Constructor
+
+        """
+        self.__doc__ = SiteConfigBase.__doc__
+        self.common = common
+
+    def system_name(self):
+        return self.common.system_name()
+
+    def site_ntp_servers(self, address_family='AF_INET'):
+        return self.common.site_ntp_servers(address_family)
+
+    def site_dns_servers(self, address_family='AF_INET'):
+        return self.common.site_dns_servers(address_family)
 
 
 # pylint: disable=invalid-name

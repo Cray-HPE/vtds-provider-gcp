@@ -48,6 +48,7 @@ from .terragrunt import (
 from .virtual_blade import VirtualBlade
 from .blade_interconnect import BladeInterconnect
 from .api_objects import (
+    SiteConfig,
     VirtualBlades,
     BladeInterconnects,
     Secrets
@@ -274,3 +275,9 @@ class Provider(ProviderAPI):
 
     def get_secrets(self):
         return Secrets(self.secret_manager)
+
+    def get_site_config(self):
+        """Retrieve the SiteConfig API object from the Provider.
+
+        """
+        return SiteConfig(self.common)
