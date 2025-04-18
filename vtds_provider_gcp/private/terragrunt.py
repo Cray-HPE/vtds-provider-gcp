@@ -170,9 +170,7 @@ class TGEnv(VersionManager):
         """Constructor
 
         """
-        # Pick a dummy version that is known to exist (in this case 0.72.5)
-        # because 'latest' doesn't work.
-        VersionManager.__init__(self, common, "tgenv", "terragrunt", "0.72.5")
+        VersionManager.__init__(self, common, "tgenv", "terragrunt", "latest")
 
 
 class Terragrunt:
