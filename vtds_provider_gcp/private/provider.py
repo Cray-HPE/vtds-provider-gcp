@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright [2024] Hewlett Packard Enterprise Development LP
+# (C) Copyright 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -188,20 +188,18 @@ class Provider(ProviderAPI):
             self.secret_manager.store(secret_name, safe_dump(keys))
 
     def consolidate(self):
-        return
-
-    def prepare(self):
-        self.terragrunt.initialize()
         blade_classes = self.common.get('virtual_blades', None)
         if blade_classes is None:
             raise ContextualError(
                 "no virtual blade classes found in vTDS provider configuration"
             )
+        # Expand the inheritance tree for the blade classes and put
+        # the expanded result back into the configuration. That way,
+        # when we write out ro try to use the configuration we have
+        # the full expansion there. Doing this in the consolidate()
+        # phase means that other consolidate actions by subsequent
+        # layers will work on the final working config.
         for blade_class in blade_classes:
-            # Expand the inheritance tree for the blade class and put
-            # the expanded result back into the configuration. That
-            # way, when we write out the configuration we have the
-            # full expansion there.
             if blade_classes[blade_class].get('pure_base_class', False):
                 # Skip inheritance and installation for pure base
                 # classes since they have no parents, and they aren't
@@ -210,12 +208,13 @@ class Provider(ProviderAPI):
             blade_config = expand_inheritance(
                 blade_classes, blade_class
             )
-            virtual_blade = VirtualBlade(self.terragrunt)
-            blade_config = virtual_blade.initialize(
-                blade_class, blade_config
-            )
-            self.__add_ssh_key(blade_class, blade_config)
             blade_classes[blade_class] = blade_config
+        # Expand the inheritance tree for the interconnect types and
+        # put the expanded result back into the configuration. That
+        # way, when we write out or try to use the configuration we
+        # have the full expansion there. Doing this in the
+        # consolidate() phase means that other consolidate actions by
+        # subsequent layers will work on the final working config.
         interconnect_types = self.common.get('blade_interconnects', None)
         if interconnect_types is None:
             raise ContextualError(
@@ -233,14 +232,40 @@ class Provider(ProviderAPI):
             interconnect_config = expand_inheritance(
                 interconnect_types, interconnect_type
             )
+            interconnect_types[interconnect_type] = interconnect_config
+
+    def prepare(self):
+        self.terragrunt.initialize()
+        blade_classes = self.common.get('virtual_blades', None)
+        for blade_class in blade_classes:
+            if blade_classes[blade_class].get('pure_base_class', False):
+                # Skip inheritance and installation for pure base
+                # classes since they have no parents, and they aren't
+                # used for deployment.
+                continue
+            virtual_blade = VirtualBlade(self.terragrunt)
+            blade_config = virtual_blade.initialize(
+                blade_class, blade_classes[blade_class]
+            )
+            self.__add_ssh_key(blade_class, blade_config)
+            blade_classes[blade_class] = blade_config
+        interconnect_types = self.common.get('blade_interconnects', None)
+        for interconnect_type in interconnect_types:
+            if interconnect_types[interconnect_type].get(
+                    'pure_base_class', False
+            ):
+                # Skip inheritance and installation for pure base
+                # classes since they have no parents, and they aren't
+                # used for deployment.
+                continue
             blade_interconnect = BladeInterconnect(self.terragrunt)
             interconnect_config = blade_interconnect.initialize(
-                interconnect_type, interconnect_config
+                interconnect_type, interconnect_types[interconnect_type]
             )
             interconnect_types[interconnect_type] = interconnect_config
-        # Now that we have fully expanded all of the inheritance and
-        # set up the terragrunt controls for everything that is going
-        # to get them, set up the terragrunt configuration.
+
+        # Now that we have all the terragrunt controls set up, go
+        # ahead and initialize terragrunt.
         self.terragrunt_config.initialize()
 
         # All done with the preparations: make a note that we have
