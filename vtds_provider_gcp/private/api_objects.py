@@ -200,7 +200,7 @@ class BladeInterconnects(BladeInterconnectsBase):
             ) from err
 
     def __named_interconnect(self, interconnect_name):
-        """Look up a pspecifically named interconnect and return it.
+        """Look up a specifically named interconnect and return it.
         """
         blade_interconnects = self.__interconnects_by_name()
         if interconnect_name not in blade_interconnects:
