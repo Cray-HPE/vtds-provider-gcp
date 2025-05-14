@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright [2024] Hewlett Packard Enterprise Development LP
+# (C) Copyright 2024-2025 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -170,9 +170,7 @@ class TGEnv(VersionManager):
         """Constructor
 
         """
-        # Pick a dummy version that is known to exist (in this case 0.72.5)
-        # because 'latest' doesn't work.
-        VersionManager.__init__(self, common, "tgenv", "terragrunt", "0.72.5")
+        VersionManager.__init__(self, common, "tgenv", "terragrunt", "latest")
 
 
 class Terragrunt:
