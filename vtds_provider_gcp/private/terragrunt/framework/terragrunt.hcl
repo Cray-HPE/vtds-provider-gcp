@@ -61,11 +61,9 @@ remote_state {
 }
 
 inputs = {
-  admins                     = local.vtds_vars.provider.organization.admins
   org_id                     = local.vtds_vars.provider.organization.org_id
   parent                     = local.vtds_vars.provider.organization.parent
   prefix                     = local.vtds_vars.provider.organization.name
-  security_owners            = local.vtds_vars.provider.organization.security_owners
   billing_account            = local.vtds_vars.provider.organization.billing_account
   gcloud_skip_download       = local.vtds_vars.provider.project.gcloud_skip_download
   orgpolicies_skip_execution = local.vtds_vars.provider.project.orgpolicies_skip_execution

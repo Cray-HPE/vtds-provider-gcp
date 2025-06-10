@@ -54,21 +54,6 @@ provider:
     # state for the GCP provider layer for all vTDS systems.
     seed_project: ""             # Required in system config overlay
 
-    # A list of strings identifying the list of Google users or groups
-    # who own projects within the organization for managment purposes.
-    #
-    # For example:
-    #   security_owners:
-    #   - "group:my-project-admins@my-organization.net"
-    #   - "user:my-favorite-person@my-organization.net"
-    #
-    # Generally it is best to use groups here instead of users so that
-    # membership can be managed in one place.
-    security_owners: []          # Required in system config overlay
-
-    # A collection of GCP admin users or groups at the organization level
-    admins: {}
-
     # An optional list of trusted IP address ranges in CIDR format
     # that should be added to project firewalls at an organization level.
     trusted_cidrs: []
@@ -134,8 +119,9 @@ provider:
       terraform: "true"
     orgpolicies_skip_execution: false
     gcloud_skip_download: true
-    # Deletion policy. Defaults to "PREVENT" which will prevent the vTDS command from being
-    # able to delete the project. Only change this if you are okay with that.
+    # Deletion policy. Defaults to "PREVENT" which will prevent the vTDS
+    # command from being able to delete the project. Only change this if
+    # you are okay with that.
     deletion_policy: DELETE
 
   blade_interconnects:
