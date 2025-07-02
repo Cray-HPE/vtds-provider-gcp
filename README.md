@@ -242,3 +242,6 @@ Once you have the Organization configuration overlay prepared and
 hosted, assuming you are not putting it in the core configuration or
 in a local file, modify your core configuration file to pull in the
 Organization configuration overlay.
+
+### Known Issues and Workarounds
+
