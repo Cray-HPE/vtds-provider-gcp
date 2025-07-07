@@ -242,3 +242,170 @@ Once you have the Organization configuration overlay prepared and
 hosted, assuming you are not putting it in the core configuration or
 in a local file, modify your core configuration file to pull in the
 Organization configuration overlay.
+
+### Known Failures and Workarounds
+
+#### GCP Credentials Expire During or Before an Operation
+
+When deploying or removing a GCP project for vTDS manually from the
+command line, you are reliant on the user and application-default GCP
+credentials. These expire at a fixed time after you log into GCP (for
+example, after 24 hours). There is currently no way to preemptively
+re-login and extend that deadline, which means that occasionally you
+will try to deploy or remove a vTDS and your credentials will expire
+either before (ideally) or in the middle of the operation.
+
+This problem does not occur when service accounts are used, but
+interactive users are discouraged from using service accounts, since
+they need to be protected to avoid abuse of GCP.
+
+The workaround for this when working interactively is to re-login to
+GCP if you suspect the failure is credential related and then re-run
+the operation. For the most part these operations can be restarted
+safely and will then run to completion cleanly.
+
+If you are trying to deploy a vTDS and it will not move forward after
+a re-login, you may need to remove it first and try again. If you are
+trying to remove a vTDS and can't move forward, read the next
+paragraph.
+
+Occasionally, the operation will fail in a sensitive part of the
+operation and leave persistent data in an inconsistent state. If after
+you re-login, your operation continues to fail, see "Persistent Cached
+Provider Data Becomes Inconsistent" below.
+
+#### Persistent Cached Provider Data Becomes Inconsistent
+
+If the persistent cached data about your vTDS becomes inconsistent,
+you will neither be able to deploy nor remove your vTDS. This can
+happen if your deployment or removal was interrupted or failed during
+a sensitive action. The symptom is that you know you are properly
+logged into GCP, you have given any recently removed instance of your
+vTDS time to be cleaned up by GCP (see "Deployment Fails When Run Too
+Quickly After Removal of the Same vTDS") yet you can neither deploy
+nor remove your vTDS.
+
+There are three steps to correcting this situation:
+
+- Remove the Terraform data from your local build tree
+- Remove the cached Terraform data bucket from your seed project's storage
+- Manually remove the GCP project containing your vTDS (if it is present)
+
+##### Remove Local Terraform Data
+
+The local terraform data is located in your vTDS build tree at
+`vtds-build/provider/terragrunt` under your vTDS cluster
+directory. While in your cluster directory run the following:
+
+```
+rm -rf vtds_build/provider/terragrunt
+```
+
+to remove the data.
+
+##### Remove Cached Terraform Data
+
+You also need to remove the Google Storage bucket containing your
+cached Terraform state. You can do this using the `gsutil`
+command. First you want to find the URL for the bucket you are looking
+for. In general, the form of this URL is:
+
+```
+gs://<vTDS Organization Name>-<vTDS Project Base Name>-tf-state/
+```
+
+You can list buckets available to you by running:
+
+```
+gsutil ls
+```
+
+Look for the `-tf-state` bucket corresponding to your vTDS system. For
+example, if your organization is `hpe` and your vTDS base name is
+`openchami`, you would be looking for the bucket
+`hpe-openchami-tf-state`.  Using the URL found this way, remove the
+bucket using a comand of the form:
+
+```
+gsutil -m rm -r gs://hpe-openchami-tf-state/
+```
+
+The `-m` option here speeds up the removal considerably and the `-r`
+just tells `gsutil` to recursively remove the bucket.
+
+##### Manually Remove the GCP Project
+
+Finally, you need to remove the project. Since there is no Terraform
+state remaining, you cannot do this using vTDS so you have to do it
+manually. This is done by finding the project ID of your vTDS
+system. Let's say we are continuing with the `openchami` project in
+the `hpe` organization, the project ID will be
+`hpe-openchami-<suffix>` where `<suffix>` is a short random
+hexadecimal string. You can find the project using the `gcloud`
+command using a command similar to (output shown):
+
+```
+$ gcloud projects list | grep hpe-openchami
+hpe-openchami-a608              hpe-openchami                 479454303572
+```
+
+The first string in the output here, `hpe-openchami-a608`, and is the
+identifier you will use to remove the project. You can do that with a
+comand in the following form:
+
+```
+gcloud projects delete hpe-openchami-a608
+```
+
+You will be prompted to confirm the removal. Once the project is
+removed, you are ready to try deploying it again.
+
+#### Deployment Fails When Run Too Quickly After Removal of the Same vTDS
+
+When vTDS removes a system, it can take a few minutes for GCP to catch
+up with the fact that the system is removed. During that time, pieces
+of the GCP project are being torn down, and the project's ID still
+exists. If you try to deploy the same vTDS system again too quickly,
+the attempt will fail. The solution to this is to wait about 5 minutes
+and try the deploy operation again.
+
+#### Terragrunt and Terraform Initial Installs Fail
+
+In order to be able to work with the `tgenv` and `tfenv` commands
+within the vTDS code and use the configured version, at least one
+version of `terragrunt` and `terraform` respectively need to be
+installed on the local system. There is code to ensure that this is
+true in this layer implementation. It normally tries to install the
+`latest` version of both products.
+
+Unfortunately, because of the way releases work for both terragrunt
+and terraform, occasionally the installation repositories get confused
+and the `latest` version is temporarily (sometimes for an extended
+period) unavailable. This will cause the GCP provider layer to fail
+indicating that the requested version (usually `latest`, unless you have
+changed it in your configuration) is not available.
+
+To work around this problem when it occurs, first, identify an
+available version of the offending product(s), then edit your core
+configuration, and add as much of the following as you need to get
+vTDS to work again:
+
+```
+provider:
+  terragrunt:
+    terraform_dummy_version: "<available-terraform-version>"
+    terragrunt_dummy_version: "<available-terragrunt-version>"
+```
+
+You may merge this in with any pre-existing `provider` configuration
+you find there if you like, or let it stand by itself. The dummy
+version controls the initially installed version, not the version
+actually used for vTDS operations. There is a separate version setting
+that tells the GCP layer wat versions to use.
+
+NOTE: while these settings are in your core configuration, you have
+pinned the initial version(s) of the tool(s). This is harmless for the
+short term, but the versions you set will, eventually, become stale
+and you may see failures because the version(s) you set are
+unavailable. It is a good idea to remove these settings once the
+workaround is no longer needed.

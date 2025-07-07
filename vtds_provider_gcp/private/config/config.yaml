@@ -23,7 +23,9 @@
 #
 provider:
   terragrunt:
+    terraform_dummy_version: "latest"
     terraform_version: "1.9.7"
+    terragrunt_dummy_version: "latest"
     terragrunt_version: "0.68.1"
   commands:
     # This section contains the commands that will be used from within

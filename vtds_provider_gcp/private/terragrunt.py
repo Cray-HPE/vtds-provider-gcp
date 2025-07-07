@@ -156,9 +156,14 @@ class TFEnv(VersionManager):
         """Constructor
 
         """
-        # Pick a dummy version that is known to exist (in this case 1.10.5)
-        # because 'latest' doesn't work.
-        VersionManager.__init__(self, common, "tfenv", "terraform", "1.10.5")
+        dummy_version = (
+            common
+            .get("terragrunt", {})
+            .get('terraform_dummy_version', "latest")
+        )
+        VersionManager.__init__(
+            self, common, "tfenv", "terraform", dummy_version
+        )
 
 
 class TGEnv(VersionManager):
@@ -170,7 +175,14 @@ class TGEnv(VersionManager):
         """Constructor
 
         """
-        VersionManager.__init__(self, common, "tgenv", "terragrunt", "latest")
+        dummy_version = (
+            common
+            .get("terragrunt", {})
+            .get('terragrunt_dummy_version', "latest")
+        )
+        VersionManager.__init__(
+            self, common, "tgenv", "terragrunt", dummy_version
+        )
 
 
 class Terragrunt:
