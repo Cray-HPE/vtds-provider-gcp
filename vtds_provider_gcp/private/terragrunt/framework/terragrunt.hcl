@@ -52,7 +52,8 @@ remote_state {
     location               = local.vtds_vars.provider.project.location
     project                = local.vtds_vars.provider.organization.seed_project
     skip_bucket_creation   = false
-    skip_bucket_versioning = false
+    skip_bucket_versioning = true
+    enable_bucket_policy_only = true
   }
   generate = {
     path      = "remotestate.tf"
