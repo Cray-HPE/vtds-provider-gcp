@@ -214,7 +214,7 @@ vTDS application available in
 [the core configurations provided by vtds-configs](https://github.com/Cray-HPE/vtds-configs/tree/main/layers/provider/gcp)
 that will already be set up to pull in the GCP Provider Layer
 Implementation, so you should be able to simply copy and modify that. Instructions for setting up to deploy your vTDS system can be found in the
-[vTDS Core Getting Started guide](https://github.com/Cray-HPE/vtds-core/blob/VSHA-652/README.md#getting-started-with-vtds).
+[vTDS Core Getting Started guide](https://github.com/Cray-HPE/vtds-core/blob/main/README.md#getting-started-with-vtds).
 
 #### Using an Organization Config Overlay
 
@@ -349,9 +349,9 @@ $ gcloud projects list | grep hpe-openchami
 hpe-openchami-a608              hpe-openchami                 479454303572
 ```
 
-The first string in the output here, `hpe-openchami-a608`, and is the
-identifier you will use to remove the project. You can do that with a
-comand in the following form:
+The first field in the output, `hpe-openchami-a608`, is the identifier
+you will use to remove the project. You can do that with a comand in
+the following form:
 
 ```
 gcloud projects delete hpe-openchami-a608
@@ -367,7 +367,10 @@ up with the fact that the system is removed. During that time, pieces
 of the GCP project are being torn down, and the project's ID still
 exists. If you try to deploy the same vTDS system again too quickly,
 the attempt will fail. The solution to this is to wait about 5 minutes
-and try the deploy operation again.
+and try the deploy operation again, or simply check and make sure the project has been removed using a command of the form:
+```
+gcloud projects list | grep hpe-openchami
+```
 
 #### Terragrunt and Terraform Initial Installs Fail
 
@@ -401,7 +404,7 @@ You may merge this in with any pre-existing `provider` configuration
 you find there if you like, or let it stand by itself. The dummy
 version controls the initially installed version, not the version
 actually used for vTDS operations. There is a separate version setting
-that tells the GCP layer wat versions to use.
+that tells the GCP layer what versions to use.
 
 NOTE: while these settings are in your core configuration, you have
 pinned the initial version(s) of the tool(s). This is harmless for the
