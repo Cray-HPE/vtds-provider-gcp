@@ -55,7 +55,7 @@ dependency "instance_template" {
   config_path = find_in_parent_folders("instance-template/deploy")
 
   mock_outputs = {
-    self_link                               = "/projects/gcp-terragrunt-mock-project/instance-templates/my-instance-template"
+    self_link                               = "/projects/hpe-dev-seed/instance-templates/my-instance-template"
     mock_outputs_allowed_terraform_commands = ["validate", "plan"]
   }
 }
