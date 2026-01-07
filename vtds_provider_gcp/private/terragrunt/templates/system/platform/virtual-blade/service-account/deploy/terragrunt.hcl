@@ -27,14 +27,19 @@ include {
 }
 
 locals {
+  vtds_vars      = yamldecode(file(find_in_parent_folders("vtds.yaml")))
   inputs_vars    = yamldecode(file("inputs.yaml"))
+  seed_project   = local.vtds_vars.provider.organization.seed_project
 }
 
 dependency "service_project" {
   config_path = find_in_parent_folders("system/project/deploy")
 
   mock_outputs = {
-    project_id                              = "gcp-terragrunt-mock-project"
+    # The seed project needs to be used here because a 'real' project needs
+    # exist by the name offered by the mock so that it can be queried for
+    # various things by terragrunt during 'plan'.
+    project_id                              = local.seed_project
     mock_outputs_allowed_terraform_commands = ["validate", "plan"]
   }
 }
