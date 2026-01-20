@@ -60,39 +60,37 @@ An overview of vTDS is available in the
 
 As its name suggests, the GCP Provider Layer Implementation uses
 Google Cloud Platform (GCP) to implement a vTDS Provider Layer. To be
-able to use GCP, the user must have access to the resources of a GCP
-Organization, must be assigned a set of roles related to those
-resources and must have installed the necessary GCP related tools on
-their local system. Much of this is administrative preparation that
-the user does not control. In order to make it possible to set up,
-though, it is described here.
+able to use GCP, the user must have access to the resources and
+billing of a GCP Organization, must be assigned a set of roles related
+to those resources and billing and must have installed the necessary
+GCP related tools on their local system. Much of this is
+administrative preparation that the user does not control. In order to
+make it possible to set up, though, it is described here.
 
 #### GCP Organization and Administrative Setup
 
 The GCP Provider Layer requires you to have access to GCP through a
 GCP
-[organization](https://cloud.google.com/resource-manager/docs/creating-managing-organization#acquiring).
-You will need to arrange to create one, which will also involve
-setting up [Google Cloud
+[organization](https://cloud.google.com/resource-manager/docs/creating-managing-organization#acquiring). If
+you do not already have access to a GCP organization, you will need to
+create one, which will also involve setting up a [Google Cloud
 Identity](https://cloud.google.com/identity/docs/set-up-cloud-identity-admin)
-or
-[Google Workspace](https://support.google.com/a/answer/53926)
-if you don't already have one. As part of setting that up, a billing
-account will be created and associated with your organization. The
-billing account will have a name, which name can be anything, but for
-this guide, we will name it `gcp-billing`.
+or [Google Workspace](https://support.google.com/a/answer/53926). As
+part of creating your organization, you will create a billing account
+which can have any name, but, for the sake of this guide we will call
+it `gcp-billing`.
 
 The administrator of your organization must also create a folder for
-vTDS projects within your organization. They may name the folder
-anything they like, but for the sake of this guide, we will use the
-name `vtds-systems`.
+vTDS projects within your organization. Your administrator may name
+the folder anything they like, but for the sake of this guide, we will
+use the name `vtds-systems`.
 
 Within the `vtds-systems` folder, your administrator must create a
 'seed project' for vTDS deployments. The seed project is a GCP project
 that has no compute instances and serves as a persistent well known
-place to store vTDS system state using Google Cloud Storage. This
-project may also be named anything, but for this guide we will use
-`vtds-seed`.
+place to store vTDS system state and persistent secrets using Google
+Cloud Storage and the Google Cloud Secret Manager. This project may
+also be named anything, but for this guide we will use `vtds-seed`.
 
 Finally, your administrator should set up a Google Group within your
 organization. This group will permit its members to obtain the
@@ -106,22 +104,18 @@ needs the following access roles:
 - On the `gcp-billing` billing account, the `vtds-users` group needs
   to be a pricipal with the `Billing User` role.
 
-- At the GCP Organization level the `vtds-users` group needs the `viewer`
+- At the GCP Organization level the `vtds-users` group needs the `Viewer`
   role.
 
 - On the `vtds-systems` folder the `vtds-users` group needs the
   following roles:
-
   - Project Creator
+  - Viewer
 
-  - Project Deleter
-
-  - Project IAM Admin
-
-  - Project Billing Manager
-
-- On the `vtds-seed` project the `vtds-users` group needs the
-  `storage-admin` role.
+- On the `vtds-seed` project the `vtds-users` group needs the following roles:
+   - Secret Manager Secret Accessor
+   - Secret Manager Secret Version Adder
+   - Storage Admin
 
 #### GCP User Requirements and SDK Installation
 
