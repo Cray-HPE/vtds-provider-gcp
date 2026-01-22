@@ -321,7 +321,7 @@ class Terragrunt:
         that it all should work.
 
         """
-        self.__run("terragrunt", "plan", "validate")
+        self.__run("terragrunt", "--log-level", "debug", "plan", "validate")
 
     def deploy(self):
         """Run a `terragrunt apply operation across the Terragrunt
