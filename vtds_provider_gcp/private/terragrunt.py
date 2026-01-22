@@ -265,12 +265,11 @@ class Terragrunt:
                 with Popen(
                     [
                         self.tg_cmd,
-                        '--log-level',
-                        'debug',
                         'run-all',
                         operation,
                         '--terragrunt-non-interactive',
-                        '--terragrunt-provider-cache'
+                        '--terragrunt-provider-cache',
+                        '--log-level debug'
                     ],
                     stdout=out, stderr=err, cwd=directory
                 ) as terragrunt:
