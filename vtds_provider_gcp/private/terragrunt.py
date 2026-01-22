@@ -265,6 +265,8 @@ class Terragrunt:
                 with Popen(
                     [
                         self.tg_cmd,
+                        '--log-level',
+                        'debug',
                         'run-all',
                         operation,
                         '--terragrunt-non-interactive',
@@ -321,7 +323,7 @@ class Terragrunt:
         that it all should work.
 
         """
-        self.__run("terragrunt", "--log-level", "debug", "plan", "validate")
+        self.__run("terragrunt", "plan", "validate")
 
     def deploy(self):
         """Run a `terragrunt apply operation across the Terragrunt
