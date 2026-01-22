@@ -269,7 +269,8 @@ class Terragrunt:
                         operation,
                         '--terragrunt-non-interactive',
                         '--terragrunt-provider-cache',
-                        '--log-level debug'
+                        '--log-level',
+                        'debug'
                     ],
                     stdout=out, stderr=err, cwd=directory
                 ) as terragrunt:
