@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2024-2026 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2026 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -31,15 +31,6 @@ locals {
   inputs_vars = yamldecode(file("inputs.yaml"))
 }
 
-dependency "service_project" {
-  config_path = find_in_parent_folders("system/project/deploy")
-
-  mock_outputs = {
-    project_number                          = "12345678910"
-    mock_outputs_allowed_terraform_commands = ["validate", "plan"]
-  }
-}
-
 dependency "service_account" {
   config_path = find_in_parent_folders("service-account/deploy")
 
@@ -54,28 +45,13 @@ terraform {
 }
 
 inputs = {
+  projects  = [ local.vtds_vars.provider.organization.seed_project ]
+  mode     = "additive"
   bindings = {
-    {% if source_image_private -%}
-    # First, set up the role that permits the organization and
-    # instance service accounts to use the image from the source project.
-    "roles/compute.imageUser" = [
-      format("serviceAccount:%s", dependency.service_account.outputs.email),
-      format("serviceAccount:%s@cloudservices.gserviceaccount.com", dependency.service_project.outputs.project_number),
-    ]
-    # Next any additional role bindings for the instance service account only
-    # that might be configured for the private image. It is unlikely that
-    # any of these will be provided, but create them if they are.
     {%- for role in service_account_iam.seed_project | default([]) %}
     "{{ role }}" = [
       format("serviceAccount:%s", dependency.service_account.outputs.email),
     ]
     {%- endfor %}
-    {% endif %}
   }
-  mode     = "additive"
-  projects = [
-{% if source_image_private -%}
-      local.vtds_vars.{{ config_path }}.vm.boot_disk.source_image_project
-{% endif %}
-  ]
 }

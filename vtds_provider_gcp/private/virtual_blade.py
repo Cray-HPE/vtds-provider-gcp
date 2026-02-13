@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright [2024] Hewlett Packard Enterprise Development LP
+# (C) Copyright 2024-2026 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -69,6 +69,7 @@ class VirtualBlade:
             interconnect = blade_config['blade_interconnect']
             boot_disk = blade_config.get('vm', {})['boot_disk']
             access_config = blade_config.get('access_config', [])
+            service_account_iam = blade_config.get('service_account_iam', {})
         except KeyError as err:
             raise ContextualError(
                 "missing config in the Virtual Blade class '%s': %s" % (
@@ -82,6 +83,7 @@ class VirtualBlade:
                 'config_path': "provider.virtual_blades.%s" % key,
                 'source_image_private': boot_disk['source_image_private'],
                 'access_config': access_config,
+                'service_account_iam': service_account_iam,
             }
         except KeyError as err:
             raise ContextualError(
