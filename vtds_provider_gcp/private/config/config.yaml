@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2025 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2025-2026 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -344,6 +344,72 @@ provider:
     base-blade:
       parent_class: null
       pure_base_class: true
+      # Each blade is a GCP Compute Instance and has an Instance Service
+      # Account associated with it. In the case where that service
+      # account needs additional IAM roles for a given use case, they
+      # can be configured in the 'service_account_iam' section
+      # below. These roles are associatd with resource targets defined
+      # in the templated Terragrunt code for Virtual Blade Service
+      # Account IAM.
+      #
+      # Each entry is a list of GCP IAM Role strings identifying roles
+      # to be granted on the specified resource target to the GCP
+      # Compute Instance Service Account for each GCP Instance
+      # implementing a Virtual Blade of this blade class.
+      service_account_iam:
+        # Roles associated with the billing resource to which the GCP
+        # Project hosting the vTDS cluster belongs. For example:
+        #
+        #    "roles/billing.user"
+        #
+        # is required if the service account is meant to be able to
+        # allocate billable resources to itself, which is necessary if
+        # the service account needs to be able to create its own vTDS
+        # Clusters.
+        billing: []
+        # Roles associated with the GCP folder in which vTDS projects
+        # are grouped. For example, the following permit viewing and
+        # creating projects within the folder:
+        #
+        #    "roles/resourcemanager.folderViewer"
+        #    "roles/resourcemanager.projectCreator"
+        #
+        # They are needed if the service account needs to be able to
+        # create its own vTDS clusters.
+        clusters_folder: []
+        # Roles associated with the GCP project hosting the vTDS cluster
+        # itself.
+        cluster_project: []
+        # Roles associated with the image source for the boot image used
+        # to create Virtual Blades. These are assigned only to the
+        # Instance Service account for the blade and are in addition to
+        # any roles that are automatically assigned to permit access to
+        # private image sources.
+        image_source: []
+        # Roles associated with the organization to which the vTDS
+        # cluster belongs. For example, the following is needed for
+        # service accounts that need to be able to obtain information
+        # about the organization:
+        #
+        #    "roles/resourcemanager.organizationViewer"
+        #
+        # It is needed if the service account needs to be able to
+        # create its own vTDS clusters.
+        organization: []
+        # Roles associated with the vTDS Seed Project used by the vTDS
+        # Cluster. For example, the following are needed by service
+        # accounts that want to be able to store and retrive secrets in
+        # the seed project and if the service account needs to be able
+        # to store and retrieve data within the seed project:
+        #
+        #    "roles/secretmanager.secretAccessor"
+        #    "roles/secretmanager.secretVersionManager"
+        #    "roles/storage.admin"
+        #    "roles/viewer"
+        #
+        # They are needed if the service account needs to be able to
+        # create its own vTDS clusters.
+        seed_project: []
       vm:
         machine_type: n1-standard-4
         min_cpu_platform: ""

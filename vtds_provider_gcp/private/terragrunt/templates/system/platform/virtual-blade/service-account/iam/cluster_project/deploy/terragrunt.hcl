@@ -1,7 +1,7 @@
 #
 # MIT License
 #
-# (C) Copyright 2024-2026 Hewlett Packard Enterprise Development LP
+# (C) Copyright 2026 Hewlett Packard Enterprise Development LP
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -27,17 +27,9 @@ include {
 }
 
 locals {
-  vtds_vars   = yamldecode(file(find_in_parent_folders("vtds.yaml")))
-  inputs_vars = yamldecode(file("inputs.yaml"))
-}
-
-dependency "service_project" {
-  config_path = find_in_parent_folders("system/project/deploy")
-
-  mock_outputs = {
-    project_number                          = "12345678910"
-    mock_outputs_allowed_terraform_commands = ["validate", "plan"]
-  }
+  vtds_vars    = yamldecode(file(find_in_parent_folders("vtds.yaml")))
+  inputs_vars  = yamldecode(file("inputs.yaml"))
+  seed_project = local.vtds_vars.provider.organization.seed_project
 }
 
 dependency "service_account" {
@@ -49,33 +41,30 @@ dependency "service_account" {
   }
 }
 
+dependency "service_project" {
+  config_path = find_in_parent_folders("system/project/deploy")
+
+  mock_outputs = {
+    # The seed project needs to be used here because a 'real' project needs
+    # exist by the name offered by the mock so that it can be queried for
+    # various things by terragrunt during 'plan'.
+    project_id                              = local.seed_project
+    mock_outputs_allowed_terraform_commands = ["validate", "plan"]
+  }
+}
+
 terraform {
   source = format("%s?%s", local.inputs_vars.source_module.url, local.inputs_vars.source_module.version)
 }
 
 inputs = {
+  folders  = [ dependency.service_project.outputs.project_id ]
+  mode     = "additive"
   bindings = {
-    {% if source_image_private -%}
-    # First, set up the role that permits the organization and
-    # instance service accounts to use the image from the source project.
-    "roles/compute.imageUser" = [
-      format("serviceAccount:%s", dependency.service_account.outputs.email),
-      format("serviceAccount:%s@cloudservices.gserviceaccount.com", dependency.service_project.outputs.project_number),
-    ]
-    # Next any additional role bindings for the instance service account only
-    # that might be configured for the private image. It is unlikely that
-    # any of these will be provided, but create them if they are.
-    {%- for role in service_account_iam.seed_project | default([]) %}
+    {%- for role in service_account_iam.cluster_project | default([]) %}
     "{{ role }}" = [
       format("serviceAccount:%s", dependency.service_account.outputs.email),
     ]
     {%- endfor %}
-    {% endif %}
   }
-  mode     = "additive"
-  projects = [
-{% if source_image_private -%}
-      local.vtds_vars.{{ config_path }}.vm.boot_disk.source_image_project
-{% endif %}
-  ]
 }
