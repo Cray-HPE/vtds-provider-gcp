@@ -528,6 +528,9 @@ class BladeSSHConnection(BladeSSHConnectionBase, BladeConnection):
         self.options = kwargs.get('options', default_opts)
         self.options += port_opt
         self.private_key_path = private_key_path
+        info_msg("created an SSH Connection to '%s-%3.3d'" % (
+            self.blade_class, self.instance
+        ))
 
     def __enter__(self):
         return self
@@ -538,6 +541,7 @@ class BladeSSHConnection(BladeSSHConnectionBase, BladeConnection):
             exception_value=None,
             traceback=None
     ):
+        info_msg("leaving an SSH Connection to '%s'" % self.instance)
         BladeConnection.__exit__(
             self, exception_type, exception_value, traceback
         )
@@ -605,6 +609,7 @@ class BladeSSHConnection(BladeSSHConnectionBase, BladeConnection):
                 'mkdir', '-p', remote_dir,
             ]
             try:
+                info_msg("making directory '%s': %s" % (remote_dir, str(cmd)))
                 self.__run(cmd, blocking, *logfiles, **kwargs)
             except ContextualError:
                 # If it is one of ours just send it on its way to be handled
@@ -627,6 +632,7 @@ class BladeSSHConnection(BladeSSHConnectionBase, BladeConnection):
             'root@%s:%s' % (self.loc_ip, destination)
         ]
         try:
+            info_msg("copying file to '%s': %s" % (destination, str(cmd)))
             return self.__run(cmd, blocking, *logfiles, **kwargs)
         except ContextualError:
             # If it is one of ours just send it on its way to be handled
