@@ -58,7 +58,7 @@ terraform {
 }
 
 inputs = {
-  folders  = [ dependency.service_project.outputs.project_id ]
+  projects  = [ dependency.service_project.outputs.project_id ]
   mode     = "additive"
   bindings = {
     {%- for role in service_account_iam.cluster_project | default([]) %}
