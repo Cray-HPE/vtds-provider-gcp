@@ -112,8 +112,8 @@ provider:
 
     default_network_tier: null
 
-    region: us-central1
-    zone: us-central1-a
+    region: us-west1
+    zone: us-west1-a
     trusted_cidrs: []
     group_name: ""
     group_role: "roles/owner"
@@ -411,7 +411,7 @@ provider:
         # create its own vTDS clusters.
         seed_project: []
       vm:
-        machine_type: n1-standard-4
+        machine_type: n2-standard-4
         min_cpu_platform: ""
         enable_nested_virtualization: true
         threads_per_core: 1
